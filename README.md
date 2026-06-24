@@ -9,6 +9,22 @@ which drives **NZ income-tax rates** and **NZ investment-tax treatment**.
 > ⚠️ Educational tool, **not financial advice**. Tax rules are simplified — check
 > with a professional before deciding.
 
+## Goals
+
+- Keep the polished PWL Capital rent-vs-buy calculator approach, but make it
+  useful for New Zealand users instead of Canadian users.
+- Compare the two main choices in plain terms: **buy a home with a mortgage** or
+  **rent and invest the money that would otherwise go into buying**.
+- Use New Zealand tax assumptions where they matter most, especially income tax
+  on dividends and interest, while clearly naming the NZ tax details that are not
+  modelled yet.
+- Keep the calculator transparent: show the headline result, break-even year,
+  net-worth chart, and first-month cost breakdown so users can see why a result
+  changed.
+- Make scenarios easy to share by encoding every input in the URL.
+- Stay browser-only and simple to run, with no backend, accounts, API keys, or
+  stored personal data.
+
 ## What it does
 
 It projects two paths month by month over your time horizon — **buy with a
@@ -30,7 +46,7 @@ unrealised capital gains, and interest income, plus a foreign-withholding-tax ra
 are kept exactly — but taxed under **NZ rules**:
 
 - **Capital gains are not taxed** (no NZ CGT on a long-term diversified portfolio).
-- **Dividends and interest** are taxed at your **NZ marginal rate** (2025/26
+- **Dividends and interest** are taxed at your **NZ marginal rate** (from 1 April 2025
   brackets: 10.5% / 17.5% / 30% / 33% / 39%).
 - **Foreign withholding tax** applies to foreign dividends (creditable in a taxable
   account; a pure leak in a sheltered one).

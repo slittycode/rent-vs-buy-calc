@@ -35,6 +35,11 @@ export default function AssumptionsNote({ marginalRatePct, isPortfolioTaxable }:
           credits, bright-line/property-sale tax, and transaction costs are not modelled. This is a simplified tool to
           aid thinking, not financial advice.
         </p>
+        <p>
+          <strong>Sharing and privacy.</strong> The app runs in your browser. It has no backend, accounts, API keys, or
+          stored personal data. The share link puts the calculator inputs in the URL, so anyone with that link can see
+          the scenario values you entered.
+        </p>
       </div>
     </details>
   )

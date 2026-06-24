@@ -41,8 +41,12 @@ export default function App() {
   }
 
   async function copyLink() {
+    const qs = encodeInputs(inputs)
+    const shareUrl = `${window.location.origin}${window.location.pathname}?${qs}`
+    window.history.replaceState(null, '', `${window.location.pathname}?${qs}`)
+
     try {
-      await navigator.clipboard.writeText(window.location.href)
+      await navigator.clipboard.writeText(shareUrl)
       setCopied(true)
       setTimeout(() => setCopied(false), 1500)
     } catch {

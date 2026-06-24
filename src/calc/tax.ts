@@ -19,7 +19,7 @@ export interface TaxBracket {
   rate: number
 }
 
-/** 2025/26 NZ personal income tax brackets (effective from 1 April 2025). */
+/** NZ personal income tax brackets from 1 April 2025. */
 export const NZ_TAX_BRACKETS: TaxBracket[] = [
   { upTo: 15_600, rate: 0.105 },
   { upTo: 53_500, rate: 0.175 },

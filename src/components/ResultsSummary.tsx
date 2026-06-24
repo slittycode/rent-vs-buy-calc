@@ -11,20 +11,31 @@ interface Props {
 export default function ResultsSummary({ result, horizon, rentMonthly, purchasePrice }: Props) {
   const { buyingWins, difference, finalBuyerNetWorth, finalRenterNetWorth } = result
   const winner = buyingWins ? 'Buying' : 'Renting'
+  const otherPath = buyingWins ? 'renting' : 'buying'
   const gap = Math.abs(difference)
-  const advantageLabel = `${winner} Advantage`
+  const advantageLabel = `${winner} advantage`
   const losingNetWorth = buyingWins ? finalRenterNetWorth : finalBuyerNetWorth
   const advantagePct = losingNetWorth === 0 ? 0 : (gap / Math.abs(losingNetWorth)) * 100
   const rentPurchasePct = purchasePrice === 0 ? 0 : ((rentMonthly * 12) / purchasePrice) * 100
 
   return (
     <div>
+      <div className="mb-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <p className="text-sm font-medium text-slate-500">Headline result</p>
+        <p className={`mt-1 text-2xl font-bold ${buyingWins ? 'text-emerald-700' : 'text-sky-700'}`}>
+          {winner} is ahead by {formatNZD(gap)}
+        </p>
+        <p className="mt-2 text-sm text-slate-600">
+          After {horizon} {horizon === 1 ? 'year' : 'years'}, this path ends with more net worth than {otherPath}
+          for the assumptions entered below.
+        </p>
+      </div>
       <p className="mb-3 text-sm text-slate-600">
         Final net worth after {horizon} {horizon === 1 ? 'year' : 'years'}
       </p>
       <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiCard label="Rent Final NW" value={formatNZD(finalRenterNetWorth)} />
-        <KpiCard label="Buy Final NW" value={formatNZD(finalBuyerNetWorth)} />
+        <KpiCard label="Renting final net worth" value={formatNZD(finalRenterNetWorth)} />
+        <KpiCard label="Buying final net worth" value={formatNZD(finalBuyerNetWorth)} />
         <KpiCard
           label={advantageLabel}
           value={formatNZD(gap)}
@@ -52,6 +63,9 @@ export function BreakEvenSummary({ result }: { result: SimulationResult }) {
         />
         <Stat label="Portfolio return after tax" value={formatPct(result.afterTaxReturnPct)} />
       </dl>
+      <p className="mt-3 text-xs text-slate-500">
+        Break-even means the first projected year where buying is worth at least as much as renting and investing.
+      </p>
     </div>
   )
 }
