@@ -5,13 +5,13 @@
  * but they're taxed under NZ rules:
  *   - Capital gains (realized + unrealized): NOT taxed (NZ has no CGT on a
  *     diversified portfolio held long-term).
- *   - Dividends (eligible/domestic + foreign) and interest income: taxed at the
+ *   - Dividends (domestic + foreign) and interest income: taxed at the
  *     investor's NZ marginal rate.
  *   - Foreign dividends bear foreign withholding tax (FWT). In a taxable account
  *     it's creditable against NZ tax (so the net rate is max(marginal, FWT)); in
  *     a non-taxable account it leaks out with no offsetting domestic tax.
- *   - There is no exit/capital-gains tax, so the final portfolio value is the
- *     after-tax net worth.
+ *   - FIF, PIE/PIR, imputation credits, bright-line/property-sale tax, and
+ *     transaction costs are out of scope for this faithful PWL-style version.
  */
 
 export interface TaxBracket {

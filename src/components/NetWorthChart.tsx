@@ -48,8 +48,8 @@ export default function NetWorthChart({ result }: { result: SimulationResult }) 
         </ResponsiveContainer>
       </div>
       <p className="mt-2 text-xs text-slate-500">
-        Net worth assumes you cash out that year — the buyer sells (after selling costs) and clears the mortgage; the
-        renter liquidates the portfolio (no NZ exit tax).
+        Net worth assumes you cash out that year: the buyer sells and clears the mortgage, while the renter liquidates
+        the portfolio. Selling costs and NZ exit tax are not modelled.
       </p>
     </div>
   )

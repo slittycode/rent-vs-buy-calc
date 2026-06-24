@@ -3,9 +3,8 @@
 A near-exact clone of [PWL Capital's Rent vs Buy calculator](https://research-tools.pwlcapital.com/research/rent-vs-buy)
 (the Canadian tool behind Ben Felix's "5% rule"), localised for **New Zealand**.
 
-It keeps PWL's input fields and methodology unchanged — the only difference is the
-**location** (New Zealand instead of a Canadian province), which drives **NZ income-tax
-rates** and **NZ investment-tax treatment**.
+It keeps PWL's input fields and methodology unchanged — the **location** is New Zealand,
+which drives **NZ income-tax rates** and **NZ investment-tax treatment**.
 
 > ⚠️ Educational tool, **not financial advice**. Tax rules are simplified — check
 > with a professional before deciding.
@@ -26,8 +25,8 @@ a first-month cost breakdown. Every input is encoded in the URL, so a scenario i
 
 ### The one localised difference: tax
 
-PWL's portfolio inputs (return split into eligible/foreign dividends, realized/
-unrealized capital gains, and interest income, plus a foreign-withholding-tax rate)
+PWL's portfolio inputs (return split into NZ/foreign dividends, realised/
+unrealised capital gains, and interest income, plus a foreign-withholding-tax rate)
 are kept exactly — but taxed under **NZ rules**:
 
 - **Capital gains are not taxed** (no NZ CGT on a long-term diversified portfolio).
@@ -36,6 +35,10 @@ are kept exactly — but taxed under **NZ rules**:
 - **Foreign withholding tax** applies to foreign dividends (creditable in a taxable
   account; a pure leak in a sheltered one).
 - No exit/capital-gains tax, so the final portfolio value is already after-tax.
+- This first version assumes a main-home buyer, not an investment-property
+  landlord.
+- FIF rules, PIE/PIR tax treatment, dividend imputation credits,
+  bright-line/property-sale tax, and transaction costs are not modelled.
 
 The **asset allocation** input sets the equity/bond split and resets the return-mix
 fields accordingly (at 80% equity they match PWL's defaults exactly); you can then
