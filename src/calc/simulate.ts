@@ -11,6 +11,9 @@ export interface YearPoint {
   buyerPortfolio: number // side investments the buyer makes when renting would cost more
   buyerNetWorth: number // home equity + side portfolio
   renterNetWorth: number // the invested-difference portfolio (after-tax, no NZ exit CGT)
+  buyerAnnualCost: number // total buyer cash outflow for that projection year
+  renterAnnualCost: number // total renter cash outflow for that projection year
+  renterAnnualSavings: number // buyerAnnualCost - renterAnnualCost; positive => renting is cheaper
 }
 
 /** First-month cost components, for the year-1 breakdown UI. */
@@ -77,10 +80,15 @@ export function simulate(inputs: Inputs): SimulationResult {
       buyerPortfolio,
       buyerNetWorth: buyerNetWorth(),
       renterNetWorth: renterPortfolio,
+      buyerAnnualCost: 0,
+      renterAnnualCost: 0,
+      renterAnnualSavings: 0,
     },
   ]
 
   let firstMonth: MonthlyCostBreakdown | null = null
+  let buyerAnnualCost = 0
+  let renterAnnualCost = 0
 
   for (let m = 1; m <= months; m++) {
     // Buyer mortgage cash outflow for the month.
@@ -98,6 +106,8 @@ export function simulate(inputs: Inputs): SimulationResult {
     const maintenance = (homeValue * (inputs.maintenanceCostPct / 100)) / 12
     const buyerCost = mortgageOutflow + propertyTax + maintenance + homeIns
     const renterCost = rent + rentIns
+    buyerAnnualCost += buyerCost
+    renterAnnualCost += renterCost
 
     if (m === 1) {
       firstMonth = {
@@ -134,7 +144,12 @@ export function simulate(inputs: Inputs): SimulationResult {
         buyerPortfolio,
         buyerNetWorth: buyerNetWorth(),
         renterNetWorth: renterPortfolio,
+        buyerAnnualCost,
+        renterAnnualCost,
+        renterAnnualSavings: buyerAnnualCost - renterAnnualCost,
       })
+      buyerAnnualCost = 0
+      renterAnnualCost = 0
     }
   }
 

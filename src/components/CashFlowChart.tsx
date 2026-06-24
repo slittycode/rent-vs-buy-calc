@@ -1,8 +1,8 @@
 import {
+  Bar,
+  BarChart,
   CartesianGrid,
   Legend,
-  Line,
-  LineChart,
   ReferenceLine,
   ResponsiveContainer,
   Tooltip,
@@ -17,19 +17,19 @@ interface Props {
   mortgagePaidOffYear: number | null
 }
 
-export default function NetWorthChart({ result, mortgagePaidOffYear }: Props) {
+export default function CashFlowChart({ result, mortgagePaidOffYear }: Props) {
   const data = result.series.map((p) => ({
     year: p.year,
-    Buying: Math.round(p.buyerNetWorth),
-    Renting: Math.round(p.renterNetWorth),
+    Buying: Math.round(p.buyerAnnualCost),
+    Renting: Math.round(p.renterAnnualCost),
   }))
 
   return (
     <>
-      <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">Net worth over time</h3>
+      <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">Annual cash flow</h3>
       <div className="h-72 w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data} margin={{ top: 8, right: 12, left: 0, bottom: 4 }}>
+          <BarChart data={data} margin={{ top: 8, right: 12, left: 0, bottom: 4 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
             <XAxis dataKey="year" tickFormatter={(y) => `${y}y`} stroke="#94a3b8" fontSize={12} />
             <YAxis tickFormatter={(v) => formatNZDCompact(Number(v))} stroke="#94a3b8" fontSize={12} width={64} />
@@ -47,14 +47,14 @@ export default function NetWorthChart({ result, mortgagePaidOffYear }: Props) {
                 label={{ value: 'Mortgage paid off', fontSize: 11, fill: '#737373', position: 'insideTopRight' }}
               />
             )}
-            <Line type="monotone" dataKey="Buying" stroke="#059669" strokeWidth={2.5} dot={false} />
-            <Line type="monotone" dataKey="Renting" stroke="#0284c7" strokeWidth={2.5} dot={false} />
-          </LineChart>
+            <Bar dataKey="Buying" fill="#059669" radius={[3, 3, 0, 0]} />
+            <Bar dataKey="Renting" fill="#0284c7" radius={[3, 3, 0, 0]} />
+          </BarChart>
         </ResponsiveContainer>
       </div>
       <p className="mt-2 text-xs text-slate-500">
-        Net worth assumes you cash out that year: the buyer sells and clears the mortgage, while the renter liquidates
-        the portfolio. Selling costs and NZ exit tax are not modelled.
+        Annual cash flow adds up each year&rsquo;s housing costs. Year 0 is shown as zero so the chart lines up with the
+        net-worth view.
       </p>
     </>
   )

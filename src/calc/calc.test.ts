@@ -146,4 +146,51 @@ describe('simulation', () => {
     const p = simulate(NZ_DEFAULTS).series[5]
     expect(p.homeEquity).toBeCloseTo(p.homeValue - p.mortgageBalance, 2)
   })
+
+  it('starts yearly cost and savings fields at zero', () => {
+    const y0 = simulate(NZ_DEFAULTS).series[0]
+
+    expect(y0.buyerAnnualCost).toBe(0)
+    expect(y0.renterAnnualCost).toBe(0)
+    expect(y0.renterAnnualSavings).toBe(0)
+  })
+
+  it('accumulates yearly buyer and renter costs from monthly costs', () => {
+    const r = simulate({
+      ...NZ_DEFAULTS,
+      inflationPct: 0,
+      realEstateGrowthRatePct: 0,
+      timeHorizonYears: 1,
+    })
+    const y1 = r.series[1]
+
+    expect(y1.buyerAnnualCost).toBeCloseTo(r.firstMonth.buyerTotal * 12, 2)
+    expect(y1.renterAnnualCost).toBeCloseTo(r.firstMonth.renterTotal * 12, 2)
+  })
+
+  it('reports renter annual savings as buyer cost minus renter cost', () => {
+    const y1 = simulate(NZ_DEFAULTS).series[1]
+
+    expect(y1.renterAnnualSavings).toBeCloseTo(y1.buyerAnnualCost - y1.renterAnnualCost, 2)
+  })
+
+  it('supports deriving the first year where the mortgage is paid off from the yearly series', () => {
+    const paidOff = simulate({
+      ...NZ_DEFAULTS,
+      purchasePrice: 120_000,
+      downPaymentPct: 0,
+      amortizationYears: 1,
+      interestRatePct: 0,
+      realEstateGrowthRatePct: 0,
+      timeHorizonYears: 2,
+    })
+    const withinHorizon = paidOff.series.find((p) => p.year > 0 && p.mortgageBalance === 0)?.year ?? null
+    const notWithinHorizon =
+      simulate({ ...NZ_DEFAULTS, amortizationYears: 30, timeHorizonYears: 10 }).series.find(
+        (p) => p.year > 0 && p.mortgageBalance === 0,
+      )?.year ?? null
+
+    expect(withinHorizon).toBe(1)
+    expect(notWithinHorizon).toBeNull()
+  })
 })

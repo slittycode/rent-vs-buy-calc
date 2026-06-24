@@ -6,17 +6,26 @@ import App from './App'
 afterEach(cleanup)
 
 describe('App (smoke)', () => {
-  it('mounts and renders the verdict, chart heading and inputs', () => {
+  it('mounts and renders the PWL-style structure with NZ caveats', () => {
     const { container } = render(<App />)
     expect(screen.getByRole('heading', { name: 'Rent vs Buy — New Zealand' })).toBeTruthy()
-    // The verdict line always renders one of "Buying/Renting comes out ahead by …".
-    expect(screen.getByText(/comes out ahead by/i)).toBeTruthy()
+    expect(screen.getByText(/Rent Final NW/i)).toBeTruthy()
+    expect(screen.getByText(/Buy Final NW/i)).toBeTruthy()
+    expect(screen.getByText(/Advantage/i)).toBeTruthy()
+    expect(screen.getByText(/Rent\/Purchase Price/i)).toBeTruthy()
+    expect(screen.getByRole('tab', { name: 'Net Worth' })).toBeTruthy()
+    expect(screen.getByRole('tab', { name: 'Cash Flow' })).toBeTruthy()
+    expect(screen.getByRole('tab', { name: 'Renter Savings' })).toBeTruthy()
     expect(screen.getByText(/Net worth over time/i)).toBeTruthy()
-    expect(screen.getByText(/Investment return mix/i)).toBeTruthy()
-    expect(screen.getByText(/Location & tax/i)).toBeTruthy()
+    expect(screen.getAllByText(/Assumptions/i).length).toBeGreaterThan(0)
+    expect(screen.getByText(/^Buy$/i)).toBeTruthy()
+    expect(screen.getAllByText(/^Rent$/i).length).toBeGreaterThan(0)
+    expect(screen.getByText(/Expected Returns/i)).toBeTruthy()
 
     const text = container.textContent ?? ''
     expect(text).not.toMatch(/Canadian province/i)
+    expect(text).not.toMatch(/PWL Capital/i)
+    expect(text).not.toMatch(/Meet with us/i)
     expect(text).not.toMatch(/eligible dividends/i)
     expect(text).not.toMatch(/after selling costs/i)
     expect(text).toMatch(/FIF rules/i)

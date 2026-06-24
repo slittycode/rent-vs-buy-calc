@@ -6,8 +6,8 @@ import { marginalRate } from './calc/tax'
 import { compositionForAllocation } from './calc/portfolio'
 import { decodeInputs, encodeInputs } from './state/urlState'
 import InputsPanel from './components/InputsPanel'
-import ResultsSummary from './components/ResultsSummary'
-import NetWorthChart from './components/NetWorthChart'
+import ResultsSummary, { BreakEvenSummary } from './components/ResultsSummary'
+import ChartTabs from './components/ChartTabs'
 import CostBreakdown from './components/CostBreakdown'
 import AssumptionsNote from './components/AssumptionsNote'
 
@@ -56,15 +56,15 @@ export default function App() {
         <div className="mx-auto max-w-6xl px-4 py-5">
           <h1 className="text-xl font-bold sm:text-2xl">Rent vs Buy — New Zealand</h1>
           <p className="mt-1 text-sm text-slate-600">
-            The PWL Capital rent-vs-buy calculator, localised for New Zealand tax.
+            Compare buying a home against renting and investing the difference, localised for New Zealand tax.
           </p>
         </div>
       </header>
 
-      <main className="mx-auto grid max-w-6xl gap-6 px-4 py-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
-        <section className="order-2 lg:order-1">
+      <main className="mx-auto grid max-w-7xl gap-6 px-4 py-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <section className="order-1 lg:order-2">
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Your scenario</h2>
+            <h2 className="text-lg font-semibold">Assumptions</h2>
             <div className="flex gap-2">
               <button
                 onClick={copyLink}
@@ -83,18 +83,26 @@ export default function App() {
           <InputsPanel inputs={inputs} update={update} />
         </section>
 
-        <section className="order-1 space-y-5 lg:order-2">
-          <ResultsSummary result={result} horizon={inputs.timeHorizonYears} />
-          <NetWorthChart result={result} />
-          <CostBreakdown b={result.firstMonth} />
-          <AssumptionsNote
-            marginalRatePct={marginalRate(inputs.annualIncome) * 100}
-            isPortfolioTaxable={inputs.isPortfolioTaxable}
+        <section className="order-2 space-y-5 lg:order-1">
+          <ResultsSummary
+            result={result}
+            horizon={inputs.timeHorizonYears}
+            rentMonthly={inputs.rentMonthly}
+            purchasePrice={inputs.purchasePrice}
           />
+          <ChartTabs result={result} />
+          <div className="space-y-5 pt-1">
+            <BreakEvenSummary result={result} />
+            <CostBreakdown b={result.firstMonth} />
+            <AssumptionsNote
+              marginalRatePct={marginalRate(inputs.annualIncome) * 100}
+              isPortfolioTaxable={inputs.isPortfolioTaxable}
+            />
+          </div>
         </section>
       </main>
 
-      <footer className="mx-auto max-w-6xl px-4 py-8 text-center text-xs text-slate-400">
+      <footer className="mx-auto max-w-7xl px-4 py-8 text-center text-xs text-slate-400">
         Educational tool — not financial advice. NZ tax rules are simplified; check with a professional before deciding.
       </footer>
     </div>

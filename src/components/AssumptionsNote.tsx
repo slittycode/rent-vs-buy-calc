@@ -9,7 +9,7 @@ export default function AssumptionsNote({ marginalRatePct, isPortfolioTaxable }:
       <summary className="cursor-pointer font-semibold text-slate-700">How this works & key assumptions</summary>
       <div className="mt-3 space-y-3 text-slate-600">
         <p>
-          This mirrors the PWL Capital rent-vs-buy calculator field for field; the location is set to
+          This follows the same rent-vs-buy field structure as the source calculator; the location is set to
           New&nbsp;Zealand, which drives NZ income-tax rates in this version.
         </p>
         <p>
