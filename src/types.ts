@@ -1,0 +1,44 @@
+/**
+ * Inputs mirror the PWL Capital rent-vs-buy calculator field-for-field. The only
+ * localisation is `location` (New Zealand instead of a Canadian province), which
+ * drives NZ income-tax brackets. Percentages are whole numbers (5.5 = 5.5%);
+ * dollar amounts are NZD.
+ */
+
+export const LOCATIONS = ['New Zealand'] as const
+export type Location = (typeof LOCATIONS)[number]
+
+export interface Inputs {
+  // Location & profile
+  location: Location
+  isPortfolioTaxable: boolean // is the invest-the-difference portfolio in a taxable account?
+  timeHorizonYears: number
+  annualIncome: number // gross; drives the NZ marginal tax rate
+
+  // Buying
+  purchasePrice: number
+  downPaymentPct: number
+  amortizationYears: number
+  interestRatePct: number
+  propertyTaxRatePct: number // annual, % of property value (NZ: council rates)
+  maintenanceCostPct: number // annual, % of property value
+  realEstateGrowthRatePct: number
+  homeInsuranceMonthly: number
+
+  // Renting
+  rentInsuranceMonthly: number
+  rentMonthly: number
+
+  // Portfolio (invest the difference)
+  assetAllocationPct: number // % equities; remainder bonds/cash
+  inflationPct: number
+
+  // Expected annual return, split by tax character (% of portfolio value).
+  // The sum is the total expected nominal return; the split sets how it's taxed.
+  eligibleDividendsPct: number
+  foreignDividendsPct: number
+  unrealizedGainsPct: number
+  realizedGainsPct: number
+  interestIncomePct: number
+  foreignWithholdingTaxPct: number
+}
