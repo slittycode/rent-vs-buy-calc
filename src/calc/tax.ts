@@ -1,20 +1,20 @@
 /**
  * New Zealand tax helpers.
  *
- * Investment portfolio (the "rent and invest the difference" side) is modelled
- * the NZ way:
- *   - Equities are assumed to be a global/foreign PIE fund taxed under the
- *     Foreign Investment Fund (FIF) Fair Dividend Rate (FDR) method: 5% of the
- *     portfolio value is deemed taxable income each year, taxed at the investor's
- *     PIR. The drag is therefore a fixed 0.05 * PIR of value per year (1.40% at
- *     the 28% PIR), regardless of the actual return.
- *   - Bonds/cash income is taxed at the PIR.
- *   - There is NO capital gains tax and NO exit tax, so the final portfolio value
- *     IS the after-tax net worth (a key contrast with the Canadian original).
+ * The portfolio inputs are PWL's (dividends / capital gains / interest split),
+ * but they're taxed under NZ rules:
+ *   - Capital gains (realized + unrealized): NOT taxed (NZ has no CGT on a
+ *     diversified portfolio held long-term).
+ *   - Dividends (eligible/domestic + foreign) and interest income: taxed at the
+ *     investor's NZ marginal rate.
+ *   - Foreign dividends bear foreign withholding tax (FWT). In a taxable account
+ *     it's creditable against NZ tax (so the net rate is max(marginal, FWT)); in
+ *     a non-taxable account it leaks out with no offsetting domestic tax.
+ *   - There is no exit/capital-gains tax, so the final portfolio value is the
+ *     after-tax net worth.
  */
 
 export interface TaxBracket {
-  /** Upper bound of this band (inclusive); Infinity for the top band. */
   upTo: number
   rate: number
 }
@@ -28,7 +28,7 @@ export const NZ_TAX_BRACKETS: TaxBracket[] = [
   { upTo: Infinity, rate: 0.39 },
 ]
 
-/** Marginal income tax rate (as a fraction, e.g. 0.33) for a given gross income. */
+/** Marginal income tax rate (fraction) for a given gross income. */
 export function marginalRate(income: number): number {
   for (const b of NZ_TAX_BRACKETS) {
     if (income <= b.upTo) return b.rate
@@ -42,35 +42,52 @@ export function incomeTax(income: number): number {
   let lower = 0
   for (const b of NZ_TAX_BRACKETS) {
     if (income <= lower) break
-    const taxedHere = Math.min(income, b.upTo) - lower
-    tax += taxedHere * b.rate
+    tax += (Math.min(income, b.upTo) - lower) * b.rate
     lower = b.upTo
   }
   return tax
 }
 
-export interface ReturnAssumptions {
-  equityAllocationPct: number
-  equityReturnPct: number
-  bondReturnPct: number
-  pirPct: number
+export interface PortfolioTaxInputs {
+  isPortfolioTaxable: boolean
+  annualIncome: number
+  eligibleDividendsPct: number
+  foreignDividendsPct: number
+  unrealizedGainsPct: number
+  realizedGainsPct: number
+  interestIncomePct: number
+  foreignWithholdingTaxPct: number
 }
 
-/** Fixed annual FIF/FDR tax drag on the equity portion (fraction of value). */
-export function fdrDrag(pirPct: number): number {
-  return 0.05 * (pirPct / 100)
+/** Total expected nominal return (fraction) = sum of the composition fields. */
+export function grossPortfolioReturn(p: PortfolioTaxInputs): number {
+  return (
+    (p.eligibleDividendsPct +
+      p.foreignDividendsPct +
+      p.unrealizedGainsPct +
+      p.realizedGainsPct +
+      p.interestIncomePct) /
+    100
+  )
 }
 
-/**
- * Blended expected after-tax annual return on the portfolio (as a fraction).
- * Equities: gross return minus the fixed FDR drag.
- * Bonds/cash: gross interest taxed at the PIR.
- */
-export function afterTaxAnnualReturn(a: ReturnAssumptions): number {
-  const equity = a.equityAllocationPct / 100
-  const bond = 1 - equity
-  const pir = a.pirPct / 100
-  const equityAfterTax = a.equityReturnPct / 100 - fdrDrag(a.pirPct)
-  const bondAfterTax = (a.bondReturnPct / 100) * (1 - pir)
-  return equity * equityAfterTax + bond * bondAfterTax
+/** Annual tax drag (fraction of portfolio value) under NZ rules. */
+export function portfolioTaxDrag(p: PortfolioTaxInputs): number {
+  const m = marginalRate(p.annualIncome)
+  const f = p.foreignWithholdingTaxPct / 100
+  if (p.isPortfolioTaxable) {
+    // Dividends + interest taxed at marginal; foreign dividends net of FWT credit
+    // (max(m, f) captures any non-creditable excess). Capital gains untaxed.
+    const eligible = p.eligibleDividendsPct * m
+    const interest = p.interestIncomePct * m
+    const foreign = p.foreignDividendsPct * Math.max(m, f)
+    return (eligible + interest + foreign) / 100
+  }
+  // Sheltered account: no domestic tax, but foreign withholding still leaks.
+  return (p.foreignDividendsPct * f) / 100
+}
+
+/** Expected after-tax annual return (fraction) on the portfolio. */
+export function afterTaxPortfolioReturn(p: PortfolioTaxInputs): number {
+  return grossPortfolioReturn(p) - portfolioTaxDrag(p)
 }

@@ -17,8 +17,15 @@ export function decodeInputs(search: string): Inputs {
   for (const key of Object.keys(NZ_DEFAULTS) as (keyof Inputs)[]) {
     const raw = params.get(key)
     if (raw === null) continue
-    const n = Number(raw)
-    if (Number.isFinite(n)) result[key] = n
+    const def = NZ_DEFAULTS[key]
+    if (typeof def === 'number') {
+      const n = Number(raw)
+      if (Number.isFinite(n)) (result[key] as number) = n
+    } else if (typeof def === 'boolean') {
+      ;(result[key] as boolean) = raw === 'true'
+    } else {
+      ;(result[key] as string) = raw
+    }
   }
   return result
 }

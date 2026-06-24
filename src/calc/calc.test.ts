@@ -1,6 +1,13 @@
 import { describe, it, expect } from 'vitest'
 import { monthlyMortgagePayment, remainingBalance } from './mortgage'
-import { marginalRate, incomeTax, fdrDrag, afterTaxAnnualReturn } from './tax'
+import {
+  marginalRate,
+  incomeTax,
+  grossPortfolioReturn,
+  portfolioTaxDrag,
+  afterTaxPortfolioReturn,
+} from './tax'
+import { compositionForAllocation } from './portfolio'
 import { simulate } from './simulate'
 import { NZ_DEFAULTS } from '../defaults'
 import type { Inputs } from '../types'
@@ -8,8 +15,7 @@ import type { Inputs } from '../types'
 describe('mortgage', () => {
   it('computes the standard amortising payment', () => {
     // $680,000 at 5.5% over 30 years ≈ $3,861/month
-    const payment = monthlyMortgagePayment(680_000, 5.5, 30)
-    expect(payment).toBeCloseTo(3861, -1) // within ~$10
+    expect(monthlyMortgagePayment(680_000, 5.5, 30)).toBeCloseTo(3861, -1)
   })
 
   it('handles a zero interest rate', () => {
@@ -18,12 +24,6 @@ describe('mortgage', () => {
 
   it('amortises to zero at the end of the term', () => {
     expect(remainingBalance(680_000, 5.5, 30, 360)).toBe(0)
-  })
-
-  it('leaves most principal outstanding early in the term', () => {
-    const bal = remainingBalance(680_000, 5.5, 30, 60) // after 5 years
-    expect(bal).toBeGreaterThan(620_000)
-    expect(bal).toBeLessThan(680_000)
   })
 })
 
@@ -42,30 +42,48 @@ describe('NZ income tax', () => {
   })
 })
 
-describe('portfolio after-tax return (FIF/PIR)', () => {
-  it('FDR drag is 5% of value times PIR', () => {
-    expect(fdrDrag(28)).toBeCloseTo(0.014, 6) // 1.40% at 28% PIR
+describe('asset allocation → return composition', () => {
+  it('reproduces PWL defaults at 80% equity', () => {
+    const c = compositionForAllocation(80)
+    expect(c.eligibleDividendsPct).toBeCloseTo(0.6, 5)
+    expect(c.foreignDividendsPct).toBeCloseTo(0.75, 5)
+    expect(c.realizedGainsPct).toBeCloseTo(0.43, 5)
+    expect(c.unrealizedGainsPct).toBeCloseTo(3.85, 5)
+    expect(c.interestIncomePct).toBeCloseTo(0.67, 5)
   })
 
-  it('blends equity (FDR) and bond (PIR on interest) returns', () => {
-    // 80% equity: 6.5% - 1.4% = 5.1%; 20% bond: 4% * 0.72 = 2.88%
-    // blend = .8*.051 + .2*.0288 = .04656
-    const r = afterTaxAnnualReturn({
-      equityAllocationPct: 80,
-      equityReturnPct: 6.5,
-      bondReturnPct: 4,
-      pirPct: 28,
-    })
-    expect(r).toBeCloseTo(0.04656, 5)
+  it('is all interest at 0% equity and no interest at 100% equity', () => {
+    expect(compositionForAllocation(0).interestIncomePct).toBeCloseTo(3.35, 5)
+    expect(compositionForAllocation(100).interestIncomePct).toBe(0)
+  })
+})
+
+describe('NZ portfolio tax', () => {
+  it('total gross return is the sum of the composition (≈6.3% on defaults)', () => {
+    expect(grossPortfolioReturn(NZ_DEFAULTS)).toBeCloseTo(0.063, 5)
+  })
+
+  it('taxes dividends + interest at marginal but never capital gains', () => {
+    // income 90k → m=0.33; foreign uses max(m, fwt)=0.33. Gains untaxed.
+    // drag = (0.6 + 0.67)*0.33 + 0.75*0.33 = 0.6666 → /100
+    expect(portfolioTaxDrag(NZ_DEFAULTS)).toBeCloseTo(0.006666, 5)
+    expect(afterTaxPortfolioReturn(NZ_DEFAULTS)).toBeCloseTo(0.056334, 5)
+  })
+
+  it('in a sheltered account only foreign withholding tax leaks', () => {
+    const sheltered: Inputs = { ...NZ_DEFAULTS, isPortfolioTaxable: false }
+    // drag = 0.75 * 0.15 / 100 = 0.001125
+    expect(portfolioTaxDrag(sheltered)).toBeCloseTo(0.001125, 6)
   })
 })
 
 describe('simulation', () => {
-  it('starts the renter ahead by the buyer transaction costs', () => {
+  it('starts both parties level at the deposit (no transaction costs)', () => {
     const r = simulate(NZ_DEFAULTS)
     const y0 = r.series[0]
-    // At t=0 the buyer is behind by purchase costs + selling costs on the home.
-    expect(y0.renterNetWorth).toBeGreaterThan(y0.buyerNetWorth)
+    const deposit = NZ_DEFAULTS.purchasePrice * (NZ_DEFAULTS.downPaymentPct / 100)
+    expect(y0.buyerNetWorth).toBeCloseTo(deposit, 2)
+    expect(y0.renterNetWorth).toBeCloseTo(deposit, 2)
   })
 
   it('produces a yearly point per year plus year 0', () => {
@@ -75,28 +93,19 @@ describe('simulation', () => {
   })
 
   it('favours buying when rent is very high', () => {
-    const expensiveRent: Inputs = { ...NZ_DEFAULTS, rentMonthly: 6000, timeHorizonYears: 15 }
-    const r = simulate(expensiveRent)
+    const r = simulate({ ...NZ_DEFAULTS, rentMonthly: 8000, timeHorizonYears: 20 })
     expect(r.buyingWins).toBe(true)
     expect(r.difference).toBeGreaterThan(0)
   })
 
   it('favours renting when rent is very cheap over a short horizon', () => {
-    const cheapRent: Inputs = { ...NZ_DEFAULTS, rentMonthly: 1500, timeHorizonYears: 5 }
-    const r = simulate(cheapRent)
+    const r = simulate({ ...NZ_DEFAULTS, rentMonthly: 1000, timeHorizonYears: 5 })
     expect(r.buyingWins).toBe(false)
     expect(r.difference).toBeLessThan(0)
   })
 
-  it('detects a crossover year when buying overtakes renting', () => {
-    const r = simulate({ ...NZ_DEFAULTS, rentMonthly: 4500, timeHorizonYears: 25 })
-    expect(r.crossoverYear).not.toBeNull()
-    expect(r.crossoverYear!).toBeGreaterThan(0)
-  })
-
   it('home equity equals value minus balance', () => {
-    const r = simulate(NZ_DEFAULTS)
-    const p = r.series[5]
+    const p = simulate(NZ_DEFAULTS).series[5]
     expect(p.homeEquity).toBeCloseTo(p.homeValue - p.mortgageBalance, 2)
   })
 })

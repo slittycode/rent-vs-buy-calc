@@ -1,36 +1,34 @@
 import type { Inputs } from './types'
+import { compositionForAllocation } from './calc/portfolio'
 
 const DEFAULT_PRICE = 850_000
-const DEFAULT_GROSS_YIELD = 0.04 // ~4% gross rental yield to seed a sensible default rent
+const DEFAULT_ALLOCATION = 80
 
-/**
- * Sensible New Zealand defaults (mid-2026). Every value is editable in the UI;
- * these just give a realistic starting scenario.
- */
+// At 80% equity this resolves to PWL's default split: 0.60 / 0.75 / 0.43 / 3.85 / 0.67.
+const composition = compositionForAllocation(DEFAULT_ALLOCATION)
+
+/** Sensible New Zealand starting scenario. Every value is editable in the UI. */
 export const NZ_DEFAULTS: Inputs = {
+  location: 'New Zealand',
+  isPortfolioTaxable: true,
   timeHorizonYears: 10,
   annualIncome: 90_000,
 
   purchasePrice: DEFAULT_PRICE,
-  depositPct: 20,
-  loanTermYears: 30,
-  mortgageRatePct: 5.5,
-  councilRatesPct: 0.3,
-  maintenancePct: 1.0,
-  houseGrowthPct: 3.5,
-  houseInsuranceMonthly: 250,
-  bodyCorporateMonthly: 0,
-  purchaseCosts: 2_500,
-  sellingCostsPct: 2.8,
+  downPaymentPct: 20,
+  amortizationYears: 30,
+  interestRatePct: 5.5,
+  propertyTaxRatePct: 0.3,
+  maintenanceCostPct: 1.0,
+  realEstateGrowthRatePct: 3.5,
+  homeInsuranceMonthly: 250,
 
-  rentMonthly: Math.round((DEFAULT_PRICE * DEFAULT_GROSS_YIELD) / 12),
-  rentGrowthPct: 2.5,
-  contentsInsuranceMonthly: 30,
+  rentInsuranceMonthly: 30,
+  rentMonthly: Math.round((DEFAULT_PRICE * 0.04) / 12),
 
-  equityAllocationPct: 80,
-  equityReturnPct: 6.5,
-  bondReturnPct: 4.0,
-  pirPct: 28,
-
+  assetAllocationPct: DEFAULT_ALLOCATION,
   inflationPct: 2.5,
+
+  ...composition,
+  foreignWithholdingTaxPct: 15,
 }

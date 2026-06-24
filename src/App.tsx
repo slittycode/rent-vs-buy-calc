@@ -3,6 +3,7 @@ import type { Inputs } from './types'
 import { NZ_DEFAULTS } from './defaults'
 import { simulate } from './calc/simulate'
 import { marginalRate } from './calc/tax'
+import { compositionForAllocation } from './calc/portfolio'
 import { decodeInputs, encodeInputs } from './state/urlState'
 import InputsPanel from './components/InputsPanel'
 import ResultsSummary from './components/ResultsSummary'
@@ -14,7 +15,7 @@ export default function App() {
   const [inputs, setInputs] = useState<Inputs>(() => decodeInputs(window.location.search))
   const [copied, setCopied] = useState(false)
 
-  // Mirror inputs into the URL so a scenario is a shareable link (replaceState, lightly debounced).
+  // Mirror inputs into the URL so a scenario is a shareable link.
   useEffect(() => {
     const id = setTimeout(() => {
       const qs = encodeInputs(inputs)
@@ -25,8 +26,14 @@ export default function App() {
 
   const result = useMemo(() => simulate(inputs), [inputs])
 
-  function update<K extends keyof Inputs>(key: K, value: number) {
-    setInputs((prev) => ({ ...prev, [key]: value }))
+  function update<K extends keyof Inputs>(key: K, value: Inputs[K]) {
+    setInputs((prev) => {
+      // Changing the asset allocation resets the return-composition fields to match.
+      if (key === 'assetAllocationPct') {
+        return { ...prev, assetAllocationPct: value as number, ...compositionForAllocation(value as number) }
+      }
+      return { ...prev, [key]: value }
+    })
   }
 
   function reset() {
@@ -39,7 +46,7 @@ export default function App() {
       setCopied(true)
       setTimeout(() => setCopied(false), 1500)
     } catch {
-      // Clipboard may be unavailable (e.g. non-secure context); ignore.
+      // Clipboard may be unavailable; ignore.
     }
   }
 
@@ -49,7 +56,7 @@ export default function App() {
         <div className="mx-auto max-w-6xl px-4 py-5">
           <h1 className="text-xl font-bold sm:text-2xl">Rent vs Buy — New Zealand</h1>
           <p className="mt-1 text-sm text-slate-600">
-            Compare buying a home against renting and investing the difference, with NZ tax built in.
+            The PWL Capital rent-vs-buy calculator, localised for New Zealand tax.
           </p>
         </div>
       </header>
@@ -80,7 +87,10 @@ export default function App() {
           <ResultsSummary result={result} horizon={inputs.timeHorizonYears} />
           <NetWorthChart result={result} />
           <CostBreakdown b={result.firstMonth} />
-          <AssumptionsNote pir={inputs.pirPct} marginalRatePct={marginalRate(inputs.annualIncome) * 100} />
+          <AssumptionsNote
+            marginalRatePct={marginalRate(inputs.annualIncome) * 100}
+            isPortfolioTaxable={inputs.isPortfolioTaxable}
+          />
         </section>
       </main>
 

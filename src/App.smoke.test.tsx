@@ -12,6 +12,7 @@ describe('App (smoke)', () => {
     // The verdict line always renders one of "Buying/Renting comes out ahead by …".
     expect(screen.getByText(/comes out ahead by/i)).toBeTruthy()
     expect(screen.getByText(/Net worth over time/i)).toBeTruthy()
-    expect(screen.getByText(/PIR \(investor tax rate\)/i)).toBeTruthy()
+    expect(screen.getByText(/Investment return mix/i)).toBeTruthy()
+    expect(screen.getByText(/Location & tax/i)).toBeTruthy()
   })
 })

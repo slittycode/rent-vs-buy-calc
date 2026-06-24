@@ -1,37 +1,44 @@
 /**
- * All user-configurable inputs for the NZ rent-vs-buy comparison.
- * Percentages are stored as whole numbers (e.g. 5.5 means 5.5%).
- * Dollar amounts are in NZD.
+ * Inputs mirror the PWL Capital rent-vs-buy calculator field-for-field. The only
+ * localisation is `location` (New Zealand instead of a Canadian province), which
+ * drives NZ income-tax brackets. Percentages are whole numbers (5.5 = 5.5%);
+ * dollar amounts are NZD.
  */
+
+export const LOCATIONS = ['New Zealand'] as const
+export type Location = (typeof LOCATIONS)[number]
+
 export interface Inputs {
-  // Horizon & personal
+  // Location & profile
+  location: Location
+  isPortfolioTaxable: boolean // is the invest-the-difference portfolio in a taxable account?
   timeHorizonYears: number
-  annualIncome: number // gross, drives marginal rate / suggested PIR
+  annualIncome: number // gross; drives the NZ marginal tax rate
 
   // Buying
   purchasePrice: number
-  depositPct: number // % of purchase price paid upfront
-  loanTermYears: number // mortgage amortisation period
-  mortgageRatePct: number // annual interest rate
-  councilRatesPct: number // annual, as % of property value (NZ "rates")
-  maintenancePct: number // annual, as % of property value
-  houseGrowthPct: number // annual house-price appreciation
-  houseInsuranceMonthly: number
-  bodyCorporateMonthly: number // apartments/units; 0 for standalone houses
-  purchaseCosts: number // upfront legal + building inspection (no stamp duty in NZ)
-  sellingCostsPct: number // agent commission + legal, applied on sale value
+  downPaymentPct: number
+  amortizationYears: number
+  interestRatePct: number
+  propertyTaxRatePct: number // annual, % of property value (NZ: council rates)
+  maintenanceCostPct: number // annual, % of property value
+  realEstateGrowthRatePct: number
+  homeInsuranceMonthly: number
 
   // Renting
+  rentInsuranceMonthly: number
   rentMonthly: number
-  rentGrowthPct: number // annual rent increases
-  contentsInsuranceMonthly: number
 
-  // Investing the difference
-  equityAllocationPct: number // % equities; remainder is bonds/cash
-  equityReturnPct: number // expected nominal annual equity return
-  bondReturnPct: number // expected nominal annual bond/cash return
-  pirPct: number // Prescribed Investor Rate for the FIF/PIE portfolio
+  // Portfolio (invest the difference)
+  assetAllocationPct: number // % equities; remainder bonds/cash
+  inflationPct: number
 
-  // Economy
-  inflationPct: number // escalates insurance / body corp (and default rent growth)
+  // Expected annual return, split by tax character (% of portfolio value).
+  // The sum is the total expected nominal return; the split sets how it's taxed.
+  eligibleDividendsPct: number
+  foreignDividendsPct: number
+  unrealizedGainsPct: number
+  realizedGainsPct: number
+  interestIncomePct: number
+  foreignWithholdingTaxPct: number
 }
