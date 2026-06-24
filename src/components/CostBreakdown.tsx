@@ -22,7 +22,7 @@ export default function CostBreakdown({ b }: { b: MonthlyCostBreakdown }) {
           <table className="w-full text-sm">
             <tbody>
               <Row label="Mortgage (P&I)" value={b.mortgagePayment} />
-              <Row label="Property tax / rates" value={b.propertyTax} />
+              <Row label="Council rates" value={b.propertyTax} />
               <Row label="Maintenance" value={b.maintenance} />
               <Row label="Home insurance" value={b.homeInsurance} />
               <tr className="font-semibold">
@@ -37,7 +37,7 @@ export default function CostBreakdown({ b }: { b: MonthlyCostBreakdown }) {
           <table className="w-full text-sm">
             <tbody>
               <Row label="Rent" value={b.rent} />
-              <Row label="Renter insurance" value={b.rentInsurance} />
+              <Row label="Contents insurance" value={b.rentInsurance} />
               <tr className="font-semibold">
                 <td className="py-1">Total</td>
                 <td className="py-1 text-right tabular-nums">{formatNZD(b.renterTotal)}</td>

@@ -9,14 +9,15 @@ export default function AssumptionsNote({ marginalRatePct, isPortfolioTaxable }:
       <summary className="cursor-pointer font-semibold text-slate-700">How this works & key assumptions</summary>
       <div className="mt-3 space-y-3 text-slate-600">
         <p>
-          This mirrors the PWL Capital rent-vs-buy calculator field for field; the only change is the location
-          (New&nbsp;Zealand instead of a Canadian province), which drives NZ income-tax rates.
+          This mirrors the PWL Capital rent-vs-buy calculator field for field; the location is set to
+          New&nbsp;Zealand, which drives NZ income-tax rates in this version.
         </p>
         <p>
           <strong>The comparison.</strong> Both paths are projected month by month. The renter invests the down payment
           up front, then each month whichever side has the lower housing cost invests the surplus. Net worth = home
           value − mortgage balance + any side investments, versus the renter&rsquo;s portfolio. No buying/selling
-          transaction costs are modelled (PWL exposes none).
+          transaction costs are modelled. This first version assumes a main-home buyer, not an investment-property
+          landlord.
         </p>
         <p>
           <strong>NZ tax on investments.</strong> The portfolio return is split by tax type, then taxed under NZ rules:
@@ -30,8 +31,9 @@ export default function AssumptionsNote({ marginalRatePct, isPortfolioTaxable }:
         </p>
         <p>
           <strong>Caveats.</strong> Figures are in today&rsquo;s nominal dollars, a single fixed mortgage rate is assumed
-          for the whole term, returns are smooth averages, and NZ dividend imputation credits are not modelled. This is a
-          simplified tool to aid thinking, not financial advice.
+          for the whole term, and returns are smooth averages. FIF rules, PIE/PIR tax treatment, dividend imputation
+          credits, bright-line/property-sale tax, and transaction costs are not modelled. This is a simplified tool to
+          aid thinking, not financial advice.
         </p>
       </div>
     </details>

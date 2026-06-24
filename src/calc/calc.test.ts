@@ -28,6 +28,17 @@ describe('mortgage', () => {
 })
 
 describe('NZ income tax', () => {
+  it('matches IRD individual tax rates from 1 April 2025 at bracket edges', () => {
+    expect(marginalRate(15_600)).toBe(0.105)
+    expect(marginalRate(15_601)).toBe(0.175)
+    expect(marginalRate(53_500)).toBe(0.175)
+    expect(marginalRate(53_501)).toBe(0.3)
+    expect(marginalRate(78_100)).toBe(0.3)
+    expect(marginalRate(78_101)).toBe(0.33)
+    expect(marginalRate(180_000)).toBe(0.33)
+    expect(marginalRate(180_001)).toBe(0.39)
+  })
+
   it('returns the right marginal rate per bracket', () => {
     expect(marginalRate(10_000)).toBe(0.105)
     expect(marginalRate(40_000)).toBe(0.175)
@@ -68,6 +79,33 @@ describe('NZ portfolio tax', () => {
     // drag = (0.6 + 0.67)*0.33 + 0.75*0.33 = 0.6666 → /100
     expect(portfolioTaxDrag(NZ_DEFAULTS)).toBeCloseTo(0.006666, 5)
     expect(afterTaxPortfolioReturn(NZ_DEFAULTS)).toBeCloseTo(0.056334, 5)
+  })
+
+  it('leaves capital gains untaxed in the simplified NZ model', () => {
+    const gainsOnly: Inputs = {
+      ...NZ_DEFAULTS,
+      eligibleDividendsPct: 0,
+      foreignDividendsPct: 0,
+      interestIncomePct: 0,
+      realizedGainsPct: 5,
+      unrealizedGainsPct: 8,
+    }
+    expect(portfolioTaxDrag(gainsOnly)).toBe(0)
+    expect(afterTaxPortfolioReturn(gainsOnly)).toBeCloseTo(0.13, 6)
+  })
+
+  it('uses foreign withholding when it is higher than the NZ marginal rate', () => {
+    const highWithholding: Inputs = {
+      ...NZ_DEFAULTS,
+      annualIncome: 10_000,
+      eligibleDividendsPct: 0,
+      foreignDividendsPct: 1,
+      interestIncomePct: 0,
+      realizedGainsPct: 0,
+      unrealizedGainsPct: 0,
+      foreignWithholdingTaxPct: 30,
+    }
+    expect(portfolioTaxDrag(highWithholding)).toBeCloseTo(0.003, 6)
   })
 
   it('in a sheltered account only foreign withholding tax leaks', () => {

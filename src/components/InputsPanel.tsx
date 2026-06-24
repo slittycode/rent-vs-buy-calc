@@ -1,18 +1,14 @@
 import type { Inputs, Location } from '../types'
 import { LOCATIONS } from '../types'
+import { NUMERIC_INPUT_LIMITS, type NumericInputKey } from '../inputLimits'
 import InputField from './InputField'
 
-// Keys of Inputs whose values are numbers (everything except location + the toggle).
-type NumericKey = { [K in keyof Inputs]: Inputs[K] extends number ? K : never }[keyof Inputs]
-
 interface FieldConfig {
-  key: NumericKey
+  key: NumericInputKey
   label: string
   prefix?: string
   suffix?: string
   step?: number
-  min?: number
-  max?: number
   tooltip?: string
 }
 
@@ -26,34 +22,34 @@ const SECTIONS: Section[] = [
   {
     title: 'Time & income',
     fields: [
-      { key: 'timeHorizonYears', label: 'Time horizon', suffix: 'yrs', min: 1, max: 50, tooltip: 'The period to compare over.' },
-      { key: 'annualIncome', label: 'Annual income', prefix: '$', step: 1000, min: 0, tooltip: 'Gross income — sets your NZ marginal tax rate.' },
+      { key: 'timeHorizonYears', label: 'Time horizon', suffix: 'yrs', tooltip: 'The period to compare over.' },
+      { key: 'annualIncome', label: 'Annual income', prefix: '$', step: 1000, tooltip: 'Gross income — sets your NZ marginal tax rate.' },
     ],
   },
   {
     title: 'Buying',
     fields: [
-      { key: 'purchasePrice', label: 'Purchase price', prefix: '$', step: 5000, min: 0 },
-      { key: 'downPaymentPct', label: 'Down payment', suffix: '%', step: 1, min: 0, max: 100 },
-      { key: 'amortizationYears', label: 'Amortization', suffix: 'yrs', step: 1, min: 1, max: 40 },
-      { key: 'interestRatePct', label: 'Interest rate', suffix: '%', step: 0.1, min: 0 },
-      { key: 'propertyTaxRatePct', label: 'Property tax / rates', suffix: '%', step: 0.05, min: 0, tooltip: 'Annual, as a % of value (council rates in NZ).' },
-      { key: 'maintenanceCostPct', label: 'Maintenance', suffix: '%', step: 0.1, min: 0, tooltip: "Annual, as a % of the home's value." },
+      { key: 'purchasePrice', label: 'Purchase price', prefix: '$', step: 5000 },
+      { key: 'downPaymentPct', label: 'Down payment', suffix: '%', step: 1 },
+      { key: 'amortizationYears', label: 'Mortgage term', suffix: 'yrs', step: 1, tooltip: 'The mortgage amortisation period.' },
+      { key: 'interestRatePct', label: 'Interest rate', suffix: '%', step: 0.1 },
+      { key: 'propertyTaxRatePct', label: 'Council rates', suffix: '%', step: 0.05, tooltip: 'Annual council rates, as a % of the home value.' },
+      { key: 'maintenanceCostPct', label: 'Maintenance', suffix: '%', step: 0.1, tooltip: "Annual, as a % of the home's value." },
       { key: 'realEstateGrowthRatePct', label: 'Real estate growth', suffix: '%', step: 0.1, tooltip: 'Expected annual house-price appreciation.' },
-      { key: 'homeInsuranceMonthly', label: 'Home insurance', prefix: '$', suffix: '/mo', step: 10, min: 0 },
+      { key: 'homeInsuranceMonthly', label: 'Home insurance', prefix: '$', suffix: '/mo', step: 10 },
     ],
   },
   {
     title: 'Renting',
     fields: [
-      { key: 'rentMonthly', label: 'Rent', prefix: '$', suffix: '/mo', step: 50, min: 0 },
-      { key: 'rentInsuranceMonthly', label: 'Renter insurance', prefix: '$', suffix: '/mo', step: 5, min: 0 },
+      { key: 'rentMonthly', label: 'Rent', prefix: '$', suffix: '/mo', step: 50 },
+      { key: 'rentInsuranceMonthly', label: 'Contents insurance', prefix: '$', suffix: '/mo', step: 5 },
     ],
   },
   {
     title: 'Portfolio',
     fields: [
-      { key: 'assetAllocationPct', label: 'Asset allocation (equity)', suffix: '%', step: 5, min: 0, max: 100, tooltip: 'Equity share of the invested portfolio; resets the return mix below.' },
+      { key: 'assetAllocationPct', label: 'Asset allocation (equity)', suffix: '%', step: 5, tooltip: 'Equity share of the invested portfolio; resets the return mix below.' },
       { key: 'inflationPct', label: 'Inflation', suffix: '%', step: 0.1, tooltip: 'Grows rent and insurance over time.' },
     ],
   },
@@ -61,12 +57,12 @@ const SECTIONS: Section[] = [
     title: 'Investment return mix',
     hint: 'Annual return split by tax type (% of portfolio). Derived from your asset allocation, but editable. In NZ the capital-gains rows are not taxed.',
     fields: [
-      { key: 'eligibleDividendsPct', label: 'NZ / eligible dividends', suffix: '%', step: 0.05, min: 0, tooltip: 'Taxed at your NZ marginal rate.' },
-      { key: 'foreignDividendsPct', label: 'Foreign dividends', suffix: '%', step: 0.05, min: 0, tooltip: 'Taxed at your marginal rate; foreign withholding tax credited.' },
-      { key: 'realizedGainsPct', label: 'Realized capital gains', suffix: '%', step: 0.05, min: 0, tooltip: 'Not taxed in NZ (no CGT).' },
-      { key: 'unrealizedGainsPct', label: 'Unrealized capital gains', suffix: '%', step: 0.05, min: 0, tooltip: 'Not taxed in NZ (no CGT).' },
-      { key: 'interestIncomePct', label: 'Interest income', suffix: '%', step: 0.05, min: 0, tooltip: 'Taxed at your NZ marginal rate.' },
-      { key: 'foreignWithholdingTaxPct', label: 'Foreign withholding tax', suffix: '%', step: 1, min: 0, max: 100, tooltip: 'Rate withheld at source on foreign dividends.' },
+      { key: 'eligibleDividendsPct', label: 'NZ dividends', suffix: '%', step: 0.05, tooltip: 'Taxed at your NZ marginal rate in this simplified model.' },
+      { key: 'foreignDividendsPct', label: 'Foreign dividends', suffix: '%', step: 0.05, tooltip: 'Taxed at your marginal rate; foreign withholding tax credited.' },
+      { key: 'realizedGainsPct', label: 'Realised capital gains', suffix: '%', step: 0.05, tooltip: 'Not taxed in this simplified NZ model.' },
+      { key: 'unrealizedGainsPct', label: 'Unrealised capital gains', suffix: '%', step: 0.05, tooltip: 'Not taxed in this simplified NZ model.' },
+      { key: 'interestIncomePct', label: 'Interest income', suffix: '%', step: 0.05, tooltip: 'Taxed at your NZ marginal rate.' },
+      { key: 'foreignWithholdingTaxPct', label: 'Foreign withholding tax', suffix: '%', step: 1, tooltip: 'Rate withheld at source on foreign dividends.' },
     ],
   },
 ]
@@ -116,20 +112,23 @@ export default function InputsPanel({ inputs, update }: Props) {
           <h3 className={headingClass}>{section.title}</h3>
           {section.hint && <p className="-mt-2 mb-3 text-xs text-slate-500">{section.hint}</p>}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {section.fields.map((f) => (
-              <InputField
-                key={f.key}
-                label={f.label}
-                value={inputs[f.key]}
-                onChange={(v) => update(f.key, v)}
-                prefix={f.prefix}
-                suffix={f.suffix}
-                step={f.step}
-                min={f.min}
-                max={f.max}
-                tooltip={f.tooltip}
-              />
-            ))}
+            {section.fields.map((f) => {
+              const limits = NUMERIC_INPUT_LIMITS[f.key]
+              return (
+                <InputField
+                  key={f.key}
+                  label={f.label}
+                  value={inputs[f.key]}
+                  onChange={(v) => update(f.key, v)}
+                  prefix={f.prefix}
+                  suffix={f.suffix}
+                  step={f.step}
+                  min={limits.min}
+                  max={limits.max}
+                  tooltip={f.tooltip}
+                />
+              )
+            })}
           </div>
         </div>
       ))}

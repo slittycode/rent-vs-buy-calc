@@ -1,5 +1,7 @@
 import type { Inputs } from '../types'
+import { LOCATIONS } from '../types'
 import { NZ_DEFAULTS } from '../defaults'
+import { clampNumericInput, type NumericInputKey } from '../inputLimits'
 
 /** Encode all inputs as a readable query string (one param per field). */
 export function encodeInputs(inputs: Inputs): string {
@@ -20,11 +22,11 @@ export function decodeInputs(search: string): Inputs {
     const def = NZ_DEFAULTS[key]
     if (typeof def === 'number') {
       const n = Number(raw)
-      if (Number.isFinite(n)) (result[key] as number) = n
+      if (Number.isFinite(n)) (result[key] as number) = clampNumericInput(key as NumericInputKey, n)
     } else if (typeof def === 'boolean') {
-      ;(result[key] as boolean) = raw === 'true'
+      if (raw === 'true' || raw === 'false') (result[key] as boolean) = raw === 'true'
     } else {
-      ;(result[key] as string) = raw
+      if (LOCATIONS.includes(raw as Inputs['location'])) (result[key] as string) = raw
     }
   }
   return result

@@ -1,7 +1,7 @@
 /**
  * Inputs mirror the PWL Capital rent-vs-buy calculator field-for-field. The only
- * localisation is `location` (New Zealand instead of a Canadian province), which
- * drives NZ income-tax brackets. Percentages are whole numbers (5.5 = 5.5%);
+ * localisation is `location` (New Zealand), which drives NZ income-tax brackets.
+ * Percentages are whole numbers (5.5 = 5.5%);
  * dollar amounts are NZD.
  */
 
