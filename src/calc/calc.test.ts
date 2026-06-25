@@ -25,6 +25,16 @@ describe('mortgage', () => {
   it('amortises to zero at the end of the term', () => {
     expect(remainingBalance(680_000, 5.5, 30, 360)).toBe(0)
   })
+
+  it('still owes the full principal before any payments are made', () => {
+    expect(remainingBalance(680_000, 5.5, 30, 0)).toBe(680_000)
+  })
+
+  it('falls linearly to half the principal at the midpoint of a zero-rate loan', () => {
+    // $120,000 at 0% over 10 years = $1,000/month, so after 60 of 120 payments
+    // exactly half the principal remains.
+    expect(remainingBalance(120_000, 0, 10, 60)).toBeCloseTo(60_000, 5)
+  })
 })
 
 describe('NZ income tax', () => {
