@@ -97,7 +97,12 @@ export default function App() {
           <ChartTabs result={result} />
           <div className="space-y-5 pt-1">
             <BreakEvenSummary result={result} />
-            <CostBreakdown b={result.firstMonth} />
+            <CostBreakdown
+              b={result.firstMonth}
+              purchaseCosts={result.purchaseCosts}
+              sellingCostsAtHorizon={result.sellingCostsAtHorizon}
+              horizonYears={inputs.timeHorizonYears}
+            />
             <AssumptionsNote
               marginalRatePct={marginalRate(inputs.annualIncome) * 100}
               isPortfolioTaxable={inputs.isPortfolioTaxable}

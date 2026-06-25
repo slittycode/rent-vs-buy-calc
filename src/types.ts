@@ -24,6 +24,8 @@ export interface Inputs {
   maintenanceCostPct: number // annual, % of property value
   realEstateGrowthRatePct: number
   homeInsuranceMonthly: number
+  purchaseCostsPct: number // one-off buying costs (legal, LIM, builder's report) as % of price; no NZ stamp duty
+  sellingCostsPct: number // one-off costs to sell (agent commission + legal) as % of the sale value
 
   // Renting
   rentInsuranceMonthly: number

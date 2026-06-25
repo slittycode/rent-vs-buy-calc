@@ -34,6 +34,8 @@ const SECTIONS: Section[] = [
       { key: 'propertyTaxRatePct', label: 'Council rates', suffix: '%', step: 0.05, tooltip: 'Annual council rates, as a % of the home value.' },
       { key: 'maintenanceCostPct', label: 'Maintenance', suffix: '%', step: 0.1, tooltip: "Annual, as a % of the home's value." },
       { key: 'homeInsuranceMonthly', label: 'Home insurance', prefix: '$', suffix: '/mo', step: 10 },
+      { key: 'purchaseCostsPct', label: 'Purchase costs', suffix: '%', step: 0.1, tooltip: 'One-off buying costs (legal, LIM, builder’s report) as a % of price. NZ has no stamp duty. The renter invests this amount instead.' },
+      { key: 'sellingCostsPct', label: 'Selling costs', suffix: '%', step: 0.1, tooltip: 'One-off costs to sell at the end (agent commission + GST, plus legal) as a % of the sale value.' },
     ],
   },
   {

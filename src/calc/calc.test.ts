@@ -116,12 +116,42 @@ describe('NZ portfolio tax', () => {
 })
 
 describe('simulation', () => {
-  it('starts both parties level at the deposit (no transaction costs)', () => {
-    const r = simulate(NZ_DEFAULTS)
+  it('starts both parties level at the deposit when there are no transaction costs', () => {
+    const r = simulate({ ...NZ_DEFAULTS, purchaseCostsPct: 0, sellingCostsPct: 0 })
     const y0 = r.series[0]
     const deposit = NZ_DEFAULTS.purchasePrice * (NZ_DEFAULTS.downPaymentPct / 100)
     expect(y0.buyerNetWorth).toBeCloseTo(deposit, 2)
     expect(y0.renterNetWorth).toBeCloseTo(deposit, 2)
+  })
+
+  it('charges transaction costs at t=0: renter holds deposit + buying costs, buyer is down selling costs', () => {
+    const r = simulate(NZ_DEFAULTS)
+    const y0 = r.series[0]
+    const deposit = NZ_DEFAULTS.purchasePrice * (NZ_DEFAULTS.downPaymentPct / 100)
+    const purchaseCosts = NZ_DEFAULTS.purchasePrice * (NZ_DEFAULTS.purchaseCostsPct / 100)
+    const sellingCosts = NZ_DEFAULTS.purchasePrice * (NZ_DEFAULTS.sellingCostsPct / 100)
+    expect(y0.renterNetWorth).toBeCloseTo(deposit + purchaseCosts, 2)
+    expect(y0.buyerNetWorth).toBeCloseTo(deposit - sellingCosts, 2)
+    expect(r.purchaseCosts).toBeCloseTo(purchaseCosts, 2)
+  })
+
+  it('reports selling costs at the horizon as a share of the final home value', () => {
+    const r = simulate(NZ_DEFAULTS)
+    const finalHomeValue = r.series[r.series.length - 1].homeValue
+    expect(r.sellingCostsAtHorizon).toBeCloseTo(finalHomeValue * (NZ_DEFAULTS.sellingCostsPct / 100), 2)
+  })
+
+  it('higher selling costs strictly reduce buyer final net worth and advantage', () => {
+    const base = simulate(NZ_DEFAULTS)
+    const dearer = simulate({ ...NZ_DEFAULTS, sellingCostsPct: NZ_DEFAULTS.sellingCostsPct + 2 })
+    expect(dearer.finalBuyerNetWorth).toBeLessThan(base.finalBuyerNetWorth)
+    expect(dearer.difference).toBeLessThan(base.difference)
+  })
+
+  it('higher purchase costs raise renter final net worth', () => {
+    const base = simulate(NZ_DEFAULTS)
+    const dearer = simulate({ ...NZ_DEFAULTS, purchaseCostsPct: NZ_DEFAULTS.purchaseCostsPct + 2 })
+    expect(dearer.finalRenterNetWorth).toBeGreaterThan(base.finalRenterNetWorth)
   })
 
   it('produces a yearly point per year plus year 0', () => {

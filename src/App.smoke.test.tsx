@@ -22,6 +22,8 @@ describe('App (smoke)', () => {
     expect(screen.getByText(/^Buy$/i)).toBeTruthy()
     expect(screen.getAllByText(/^Rent$/i).length).toBeGreaterThan(0)
     expect(screen.getByText(/Expected Returns/i)).toBeTruthy()
+    expect(screen.getAllByText(/Purchase costs/i).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/Selling costs/i).length).toBeGreaterThan(0)
 
     const text = container.textContent ?? ''
     expect(text).not.toMatch(/Canadian province/i)
@@ -33,7 +35,7 @@ describe('App (smoke)', () => {
     expect(text).toMatch(/PIE\/PIR tax treatment/i)
     expect(text).toMatch(/dividend imputation credits/i)
     expect(text).toMatch(/bright-line\/property-sale tax/i)
-    expect(text).toMatch(/transaction costs are not modelled/i)
+    expect(text).toMatch(/transaction costs are included/i)
     expect(text).toMatch(/no backend, accounts, API keys, or stored personal data/i)
     expect(text).toMatch(/share link puts the calculator inputs in the URL/i)
   })

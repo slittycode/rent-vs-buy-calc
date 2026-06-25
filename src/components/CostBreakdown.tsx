@@ -10,7 +10,14 @@ function Row({ label, value }: { label: string; value: number }) {
   )
 }
 
-export default function CostBreakdown({ b }: { b: MonthlyCostBreakdown }) {
+interface Props {
+  b: MonthlyCostBreakdown
+  purchaseCosts: number
+  sellingCostsAtHorizon: number
+  horizonYears: number
+}
+
+export default function CostBreakdown({ b, purchaseCosts, sellingCostsAtHorizon, horizonYears }: Props) {
   const diff = b.buyerTotal - b.renterTotal
 
   return (
@@ -49,6 +56,11 @@ export default function CostBreakdown({ b }: { b: MonthlyCostBreakdown }) {
       <p className="mt-3 text-xs text-slate-500">
         Owning costs {formatNZD(Math.abs(diff))} {diff >= 0 ? 'more' : 'less'} per month than renting to start. Each
         month the cheaper side invests its surplus.
+      </p>
+      <p className="mt-2 text-xs text-slate-500">
+        Plus one-off transaction costs: ~{formatNZD(purchaseCosts)} to buy now (the renter invests this instead), and
+        ~{formatNZD(sellingCostsAtHorizon)} to sell at year {horizonYears}. Both are included in the net-worth
+        comparison.
       </p>
     </div>
   )
