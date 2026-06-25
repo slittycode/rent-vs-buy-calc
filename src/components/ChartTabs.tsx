@@ -28,7 +28,7 @@ export default function ChartTabs({ result }: { result: SimulationResult }) {
               role="tab"
               aria-selected={selected}
               onClick={() => setActiveTab(tab.id)}
-              className={`rounded-md border px-3 py-1.5 text-sm font-medium ${
+              className={`rounded-md border px-3 py-2.5 text-sm font-medium ${
                 selected
                   ? 'border-sky-600 bg-sky-50 text-sky-700'
                   : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
