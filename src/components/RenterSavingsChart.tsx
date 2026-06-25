@@ -10,6 +10,7 @@ import {
 } from 'recharts'
 import type { SimulationResult } from '../calc/simulate'
 import { formatNZD, formatNZDCompact } from '../format'
+import ChartTooltip from './ChartTooltip'
 
 interface Props {
   result: SimulationResult
@@ -25,16 +26,15 @@ export default function RenterSavingsChart({ result, mortgagePaidOffYear }: Prop
   return (
     <>
       <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">Renter savings</h3>
-      <div className="h-72 w-full">
+      <div className="h-96 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 8, right: 12, left: 0, bottom: 4 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
             <XAxis dataKey="year" tickFormatter={(y) => `${y}y`} stroke="#94a3b8" fontSize={12} />
             <YAxis tickFormatter={(v) => formatNZDCompact(Number(v))} stroke="#94a3b8" fontSize={12} width={64} />
             <Tooltip
-              formatter={(v) => formatNZD(Number(v))}
-              labelFormatter={(y) => `Year ${y}`}
-              contentStyle={{ fontSize: 13, borderRadius: 8, border: '1px solid #e2e8f0' }}
+              content={<ChartTooltip formatter={formatNZD} />}
+              cursor={{ fill: '#e2e8f0', opacity: 0.35 }}
             />
             <ReferenceLine y={0} stroke="#94a3b8" />
             {mortgagePaidOffYear !== null && (
