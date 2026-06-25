@@ -38,6 +38,8 @@ export interface SimulationResult {
   afterTaxReturnPct: number // blended portfolio after-tax return used (annual %)
   firstMonth: MonthlyCostBreakdown
   loanAmount: number
+  purchaseCosts: number // one-off buying costs paid up front (the renter invests this instead)
+  sellingCostsAtHorizon: number // one-off selling costs deducted from the home's value at the horizon
 }
 
 const monthlyRate = (annualFraction: number) => Math.pow(1 + annualFraction, 1 / 12) - 1
@@ -55,6 +57,12 @@ export function simulate(inputs: Inputs): SimulationResult {
   const payment = monthlyMortgagePayment(loanAmount, inputs.interestRatePct, inputs.amortizationYears)
   const mRate = inputs.interestRatePct / 100 / 12
 
+  // One-off transaction costs. Buying costs are paid up front; the renter invests that
+  // cash instead. Selling costs are a % of the sale value, netted out of the buyer's net
+  // worth at every snapshot ("net worth if the home were sold today").
+  const purchaseCosts = inputs.purchasePrice * (inputs.purchaseCostsPct / 100)
+  const sellFrac = inputs.sellingCostsPct / 100
+
   const afterTaxAnnual = afterTaxPortfolioReturn(inputs)
   const investM = monthlyRate(afterTaxAnnual)
   const inflM = monthlyRate(inputs.inflationPct / 100)
@@ -66,10 +74,14 @@ export function simulate(inputs: Inputs): SimulationResult {
   let homeIns = inputs.homeInsuranceMonthly
   let rentIns = inputs.rentInsuranceMonthly
 
-  let renterPortfolio = deposit // renter invests the cash the buyer ties up as a deposit
+  // Renter invests the cash the buyer ties up up front: the deposit plus buying costs.
+  let renterPortfolio = deposit + purchaseCosts
   let buyerPortfolio = 0
 
-  const buyerNetWorth = () => homeValue - balance + buyerPortfolio
+  // Buyer's realisable net worth: home value less selling costs, less the mortgage, plus
+  // any side investments. Selling costs apply to the home only (the portfolio has no NZ
+  // exit/CGT). homeEquity below stays gross (value − balance) for transparency.
+  const buyerNetWorth = () => homeValue * (1 - sellFrac) - balance + buyerPortfolio
 
   const series: YearPoint[] = [
     {
@@ -166,5 +178,7 @@ export function simulate(inputs: Inputs): SimulationResult {
     afterTaxReturnPct: afterTaxAnnual * 100,
     firstMonth: firstMonth!,
     loanAmount,
+    purchaseCosts,
+    sellingCostsAtHorizon: last.homeValue * sellFrac,
   }
 }

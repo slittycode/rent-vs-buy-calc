@@ -22,6 +22,8 @@ export const NZ_DEFAULTS: Inputs = {
   maintenanceCostPct: 1.0,
   realEstateGrowthRatePct: 3.5,
   homeInsuranceMonthly: 250,
+  purchaseCostsPct: 0.5,
+  sellingCostsPct: 3.0,
 
   rentInsuranceMonthly: 30,
   rentMonthly: Math.round((DEFAULT_PRICE * 0.04) / 12),

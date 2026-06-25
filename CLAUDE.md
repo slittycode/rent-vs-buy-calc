@@ -68,9 +68,12 @@ The calculation engine is **pure functions** in `src/calc/`, with React (`src/co
    `defaults.ts` (`NZ_DEFAULTS`), `inputLimits.ts` (if numeric), `InputsPanel.tsx` (UI), and
    `simulate.ts`/`tax.ts` if it affects the maths. `urlState` picks up new fields
    automatically by iterating `NZ_DEFAULTS` keys.
-6. **NZ tax scope is deliberately simplified** — FIF, PIE/PIR, imputation credits,
-   bright-line/property-sale tax, and transaction costs are *not* modelled. The smoke test
-   asserts this disclaimer text is present and that Canadian-tool wording is absent.
+6. **NZ tax scope is deliberately simplified** — FIF, PIE/PIR, imputation credits, and
+   bright-line/property-sale tax are *not* modelled. **Transaction costs are modelled** as
+   flat percentages (`purchaseCostsPct`, `sellingCostsPct`): purchase costs are invested by
+   the renter up front, selling costs are netted out of the buyer's home value at the horizon
+   (see `simulate.ts`). The smoke test asserts the not-modelled disclaimer text is present,
+   that "transaction costs are included", and that Canadian-tool wording is absent.
 
 ## Deploy
 
