@@ -74,6 +74,11 @@ export function simulate(inputs: Inputs): SimulationResult {
   let homeIns = inputs.homeInsuranceMonthly
   let rentIns = inputs.rentInsuranceMonthly
 
+  // Fixed-dollar council rates / maintenance (when chosen instead of % of value). They start at
+  // the annual amount / 12 and escalate with inflation each month, mirroring insurance and rent.
+  let propTaxFixedM = inputs.propertyTaxAnnualFixed / 12
+  let maintFixedM = inputs.maintenanceAnnualFixed / 12
+
   // Renter invests the cash the buyer ties up up front: the deposit plus buying costs.
   let renterPortfolio = deposit + purchaseCosts
   let buyerPortfolio = 0
@@ -114,8 +119,12 @@ export function simulate(inputs: Inputs): SimulationResult {
       if (balance < 0.005) balance = 0
     }
 
-    const propertyTax = (homeValue * (inputs.propertyTaxRatePct / 100)) / 12
-    const maintenance = (homeValue * (inputs.maintenanceCostPct / 100)) / 12
+    const propertyTax = inputs.propertyTaxIsFixed
+      ? propTaxFixedM
+      : (homeValue * (inputs.propertyTaxRatePct / 100)) / 12
+    const maintenance = inputs.maintenanceIsFixed
+      ? maintFixedM
+      : (homeValue * (inputs.maintenanceCostPct / 100)) / 12
     const buyerCost = mortgageOutflow + propertyTax + maintenance + homeIns
     const renterCost = rent + rentIns
     buyerAnnualCost += buyerCost
@@ -146,6 +155,8 @@ export function simulate(inputs: Inputs): SimulationResult {
     rent *= 1 + inflM
     homeIns *= 1 + inflM
     rentIns *= 1 + inflM
+    propTaxFixedM *= 1 + inflM
+    maintFixedM *= 1 + inflM
 
     if (m % 12 === 0) {
       series.push({

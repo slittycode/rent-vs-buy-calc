@@ -224,3 +224,43 @@ describe('simulation', () => {
     expect(notWithinHorizon).toBeNull()
   })
 })
+
+describe('fixed-dollar council rates / maintenance', () => {
+  it('uses the fixed $/yr amount (÷12) for the first month in fixed mode', () => {
+    const r = simulate({ ...NZ_DEFAULTS, propertyTaxIsFixed: true, propertyTaxAnnualFixed: 3600 })
+    expect(r.firstMonth.propertyTax).toBeCloseTo(300, 2) // 3600 / 12
+  })
+
+  it('fixed mode differs from percent mode for the same scenario', () => {
+    const pct = simulate({ ...NZ_DEFAULTS, propertyTaxIsFixed: false })
+    const fixed = simulate({ ...NZ_DEFAULTS, propertyTaxIsFixed: true, propertyTaxAnnualFixed: 3600 })
+    // percent default ≈ 0.3% × 850k / 12 = 212.5, fixed = 300
+    expect(fixed.firstMonth.propertyTax).not.toBeCloseTo(pct.firstMonth.propertyTax, 1)
+  })
+
+  it('grows a fixed amount with inflation: year-over-year cost ratio equals inflation', () => {
+    const r = simulate({
+      ...NZ_DEFAULTS,
+      downPaymentPct: 100, // no mortgage, so the buyer's only monthly cost is the fixed rates
+      maintenanceCostPct: 0,
+      homeInsuranceMonthly: 0,
+      realEstateGrowthRatePct: 0,
+      propertyTaxIsFixed: true,
+      propertyTaxAnnualFixed: 1200,
+      inflationPct: 10,
+      timeHorizonYears: 2,
+    })
+    expect(r.series[1].buyerAnnualCost).toBeGreaterThan(0)
+    expect(r.series[2].buyerAnnualCost / r.series[1].buyerAnnualCost).toBeCloseTo(1.1, 6)
+  })
+
+  it('a larger fixed maintenance amount raises cost and shifts the result toward renting', () => {
+    const base = simulate({ ...NZ_DEFAULTS, maintenanceIsFixed: true, maintenanceAnnualFixed: 4000 })
+    const dearer = simulate({ ...NZ_DEFAULTS, maintenanceIsFixed: true, maintenanceAnnualFixed: 12000 })
+    expect(dearer.firstMonth.maintenance).toBeGreaterThan(base.firstMonth.maintenance)
+    // The buyer already out-spends the renter on the defaults, so the monthly surplus accrues to
+    // the renter: dearer maintenance lifts the renter's net worth and shrinks the buying advantage.
+    expect(dearer.finalRenterNetWorth).toBeGreaterThan(base.finalRenterNetWorth)
+    expect(dearer.difference).toBeLessThan(base.difference)
+  })
+})

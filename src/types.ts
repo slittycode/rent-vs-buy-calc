@@ -21,7 +21,11 @@ export interface Inputs {
   amortizationYears: number
   interestRatePct: number
   propertyTaxRatePct: number // annual, % of property value (NZ: council rates)
+  propertyTaxIsFixed: boolean // true => use propertyTaxAnnualFixed instead of the % of value
+  propertyTaxAnnualFixed: number // annual $ council rates when fixed; grows with inflation
   maintenanceCostPct: number // annual, % of property value
+  maintenanceIsFixed: boolean // true => use maintenanceAnnualFixed instead of the % of value
+  maintenanceAnnualFixed: number // annual $ maintenance when fixed; grows with inflation
   realEstateGrowthRatePct: number
   homeInsuranceMonthly: number
   purchaseCostsPct: number // one-off buying costs (legal, LIM, builder's report) as % of price; no NZ stamp duty

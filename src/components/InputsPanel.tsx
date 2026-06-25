@@ -1,8 +1,9 @@
 import type { Inputs, Location } from '../types'
 import { LOCATIONS } from '../types'
-import { NUMERIC_INPUT_LIMITS, type NumericInputKey } from '../inputLimits'
+import { NUMERIC_INPUT_LIMITS, type NumericInputKey, type BooleanInputKey } from '../inputLimits'
 import InputField from './InputField'
 import InfoTooltip from './InfoTooltip'
+import CostModeField from './CostModeField'
 
 interface FieldConfig {
   key: NumericInputKey
@@ -11,6 +12,8 @@ interface FieldConfig {
   suffix?: string
   step?: number
   tooltip?: string
+  // If set, this field can toggle between a % (key) and a fixed $/yr amount (amountKey).
+  fixed?: { isFixedKey: BooleanInputKey; amountKey: NumericInputKey; step?: number }
 }
 
 interface Section {
@@ -32,8 +35,22 @@ const SECTIONS: Section[] = [
       { key: 'downPaymentPct', label: 'Down payment', suffix: '%', step: 1 },
       { key: 'amortizationYears', label: 'Mortgage term', suffix: 'yrs', step: 1, tooltip: 'The mortgage amortisation period.' },
       { key: 'interestRatePct', label: 'Interest rate', suffix: '%', step: 0.1 },
-      { key: 'propertyTaxRatePct', label: 'Council rates', suffix: '%', step: 0.05, tooltip: 'Annual council rates, as a % of the home value.' },
-      { key: 'maintenanceCostPct', label: 'Maintenance', suffix: '%', step: 0.1, tooltip: "Annual, as a % of the home's value." },
+      {
+        key: 'propertyTaxRatePct',
+        label: 'Council rates',
+        suffix: '%',
+        step: 0.05,
+        tooltip: 'Annual council rates — enter as a % of the home value, or a fixed $/yr (which grows with inflation).',
+        fixed: { isFixedKey: 'propertyTaxIsFixed', amountKey: 'propertyTaxAnnualFixed', step: 50 },
+      },
+      {
+        key: 'maintenanceCostPct',
+        label: 'Maintenance',
+        suffix: '%',
+        step: 0.1,
+        tooltip: "Annual maintenance — enter as a % of the home's value, or a fixed $/yr (which grows with inflation).",
+        fixed: { isFixedKey: 'maintenanceIsFixed', amountKey: 'maintenanceAnnualFixed', step: 50 },
+      },
       { key: 'homeInsuranceMonthly', label: 'Home insurance', prefix: '$', suffix: '/mo', step: 10 },
       { key: 'purchaseCostsPct', label: 'Purchase costs', suffix: '%', step: 0.1, tooltip: 'One-off buying costs (legal, LIM, builder’s report) as a % of price. NZ has no stamp duty. The renter invests this amount instead.' },
       { key: 'sellingCostsPct', label: 'Selling costs', suffix: '%', step: 0.1, tooltip: 'One-off costs to sell at the end (agent commission + GST, plus legal) as a % of the sale value.' },
@@ -75,6 +92,30 @@ const headingClass = 'mb-3 text-sm font-semibold uppercase tracking-wide text-sl
 export default function InputsPanel({ inputs, update }: Props) {
   function renderField(f: FieldConfig) {
     const limits = NUMERIC_INPUT_LIMITS[f.key]
+    if (f.fixed) {
+      const isFixedKey = f.fixed.isFixedKey
+      const amountKey = f.fixed.amountKey
+      const fixedLimits = NUMERIC_INPUT_LIMITS[amountKey]
+      return (
+        <CostModeField
+          key={f.key}
+          label={f.label}
+          tooltip={f.tooltip}
+          isFixed={inputs[isFixedKey]}
+          onModeChange={(v) => update(isFixedKey, v)}
+          pctValue={inputs[f.key]}
+          onPctChange={(v) => update(f.key, v)}
+          pctStep={f.step}
+          pctMin={limits.min}
+          pctMax={limits.max}
+          fixedValue={inputs[amountKey]}
+          onFixedChange={(v) => update(amountKey, v)}
+          fixedStep={f.fixed.step}
+          fixedMin={fixedLimits.min}
+          fixedMax={fixedLimits.max}
+        />
+      )
+    }
     return (
       <InputField
         key={f.key}

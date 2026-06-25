@@ -19,7 +19,11 @@ export const NZ_DEFAULTS: Inputs = {
   amortizationYears: 30,
   interestRatePct: 5.5,
   propertyTaxRatePct: 0.3,
+  propertyTaxIsFixed: false,
+  propertyTaxAnnualFixed: 2_550, // ≈ 0.3% of the $850k default price, so toggling is seamless
   maintenanceCostPct: 1.0,
+  maintenanceIsFixed: false,
+  maintenanceAnnualFixed: 8_500, // ≈ 1.0% of the $850k default price, so toggling is seamless
   realEstateGrowthRatePct: 3.5,
   homeInsuranceMonthly: 250,
   purchaseCostsPct: 0.5,

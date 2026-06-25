@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { NZ_DEFAULTS } from '../defaults'
-import { decodeInputs } from './urlState'
+import { decodeInputs, encodeInputs } from './urlState'
 
 describe('URL input decoding', () => {
   it('falls back to New Zealand for invalid location values', () => {
@@ -29,5 +29,25 @@ describe('URL input decoding', () => {
   it('falls back to defaults for invalid boolean query values', () => {
     expect(decodeInputs('?isPortfolioTaxable=maybe').isPortfolioTaxable).toBe(NZ_DEFAULTS.isPortfolioTaxable)
     expect(decodeInputs('?isPortfolioTaxable=false').isPortfolioTaxable).toBe(false)
+  })
+
+  it('round-trips the cost-mode flags and fixed $ amounts through encode/decode', () => {
+    const scenario = {
+      ...NZ_DEFAULTS,
+      propertyTaxIsFixed: true,
+      propertyTaxAnnualFixed: 2900,
+      maintenanceIsFixed: true,
+      maintenanceAnnualFixed: 6000,
+    }
+    const decoded = decodeInputs('?' + encodeInputs(scenario))
+
+    expect(decoded.propertyTaxIsFixed).toBe(true)
+    expect(decoded.propertyTaxAnnualFixed).toBe(2900)
+    expect(decoded.maintenanceIsFixed).toBe(true)
+    expect(decoded.maintenanceAnnualFixed).toBe(6000)
+  })
+
+  it('falls back for an invalid cost-mode flag', () => {
+    expect(decodeInputs('?maintenanceIsFixed=sometimes').maintenanceIsFixed).toBe(NZ_DEFAULTS.maintenanceIsFixed)
   })
 })
