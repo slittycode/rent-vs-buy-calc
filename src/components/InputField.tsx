@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import InfoTooltip from './InfoTooltip'
 
 interface Props {
   label: string
@@ -60,14 +61,7 @@ export default function InputField({
     <label className="block">
       <span className="flex items-center gap-1 text-sm font-medium text-slate-700">
         {label}
-        {tooltip && (
-          <span
-            title={tooltip}
-            className="inline-flex h-4 w-4 cursor-help items-center justify-center rounded-full bg-slate-200 text-[10px] font-bold text-slate-600"
-          >
-            ?
-          </span>
-        )}
+        {tooltip && <InfoTooltip text={tooltip} />}
       </span>
       <div className="mt-1 flex items-center rounded-md border border-slate-300 bg-white focus-within:border-sky-500 focus-within:ring-1 focus-within:ring-sky-500">
         {prefix && <span className="pl-2 text-sm text-slate-400">{prefix}</span>}
@@ -80,7 +74,7 @@ export default function InputField({
           max={max}
           onChange={(e) => handleChange(e.target.value)}
           onBlur={handleBlur}
-          className="w-full bg-transparent px-2 py-1.5 text-sm text-slate-900 outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+          className="w-full bg-transparent px-2 py-2.5 text-sm text-slate-900 outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
         />
         {suffix && <span className="pr-2 text-sm text-slate-400">{suffix}</span>}
       </div>

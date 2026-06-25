@@ -2,6 +2,7 @@ import type { Inputs, Location } from '../types'
 import { LOCATIONS } from '../types'
 import { NUMERIC_INPUT_LIMITS, type NumericInputKey } from '../inputLimits'
 import InputField from './InputField'
+import InfoTooltip from './InfoTooltip'
 
 interface FieldConfig {
   key: NumericInputKey
@@ -100,7 +101,7 @@ export default function InputsPanel({ inputs, update }: Props) {
             <select
               value={inputs.location}
               onChange={(e) => update('location', e.target.value as Location)}
-              className="mt-1 w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-900 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
+              className="mt-1 w-full rounded-md border border-slate-300 bg-white px-2 py-2.5 text-sm text-slate-900 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
             >
               {LOCATIONS.map((l) => (
                 <option key={l} value={l}>
@@ -127,7 +128,7 @@ export default function InputsPanel({ inputs, update }: Props) {
                     type="checkbox"
                     checked={inputs.isPortfolioTaxable}
                     onChange={(e) => update('isPortfolioTaxable', e.target.checked)}
-                    className="h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
+                    className="h-5 w-5 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
                   />
                   <span className="text-sm font-medium text-slate-700">Portfolio in a taxable account</span>
                 </label>
@@ -150,17 +151,12 @@ function AssetAllocationSelect({ value, onChange }: { value: number; onChange: (
     <label className="block">
       <span className="flex items-center gap-1 text-sm font-medium text-slate-700">
         Asset allocation (equity)
-        <span
-          title="Equity share of the invested portfolio; changing this resets the return mix below."
-          className="inline-flex h-4 w-4 cursor-help items-center justify-center rounded-full bg-slate-200 text-[10px] font-bold text-slate-600"
-        >
-          ?
-        </span>
+        <InfoTooltip text="Equity share of the invested portfolio; changing this resets the return mix below." />
       </span>
       <select
         value={String(value)}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="mt-1 w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-900 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
+        className="mt-1 w-full rounded-md border border-slate-300 bg-white px-2 py-2.5 text-sm text-slate-900 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
       >
         {options.map((n) => (
           <option key={n} value={String(n)}>

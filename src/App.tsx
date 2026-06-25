@@ -66,19 +66,19 @@ export default function App() {
       </header>
 
       <main className="mx-auto grid max-w-7xl gap-6 px-4 py-6 lg:grid-cols-[minmax(0,1fr)_360px]">
-        <section className="order-1 lg:order-2">
+        <section className="order-2">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-lg font-semibold">Assumptions</h2>
             <div className="flex gap-2">
               <button
                 onClick={copyLink}
-                className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                className="rounded-md border border-slate-300 bg-white px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
               >
                 {copied ? 'Copied!' : 'Copy link'}
               </button>
               <button
                 onClick={reset}
-                className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                className="rounded-md border border-slate-300 bg-white px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
               >
                 Reset
               </button>
@@ -87,7 +87,7 @@ export default function App() {
           <InputsPanel inputs={inputs} update={update} />
         </section>
 
-        <section className="order-2 space-y-5 lg:order-1">
+        <section className="order-1 space-y-5">
           <ResultsSummary
             result={result}
             horizon={inputs.timeHorizonYears}
