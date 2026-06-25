@@ -33,9 +33,10 @@ export default function AssumptionsNote({ marginalRatePct, isPortfolioTaxable }:
         </p>
         <p>
           <strong>Caveats.</strong> Figures are in today&rsquo;s nominal dollars, a single fixed mortgage rate is assumed
-          for the whole term, and returns are smooth averages. Transaction costs are modelled only as flat percentages
-          (no fixed-fee detail). FIF rules, PIE/PIR tax treatment, dividend imputation credits, and
-          bright-line/property-sale tax are not modelled. This is a simplified tool to aid thinking, not financial
+          for the whole term, and returns are smooth averages. Council rates and maintenance can be entered as a home-value
+          percentage or a fixed yearly amount; fixed yearly amounts rise with inflation. Transaction costs are modelled
+          only as flat percentages (no fixed-fee detail). FIF rules, PIE/PIR tax treatment, dividend imputation credits,
+          and bright-line/property-sale tax are not modelled. This is a simplified tool to aid thinking, not financial
           advice.
         </p>
         <p>

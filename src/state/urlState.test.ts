@@ -29,5 +29,17 @@ describe('URL input decoding', () => {
   it('falls back to defaults for invalid boolean query values', () => {
     expect(decodeInputs('?isPortfolioTaxable=maybe').isPortfolioTaxable).toBe(NZ_DEFAULTS.isPortfolioTaxable)
     expect(decodeInputs('?isPortfolioTaxable=false').isPortfolioTaxable).toBe(false)
+    expect(decodeInputs('?propertyTaxIsFixed=maybe').propertyTaxIsFixed).toBe(NZ_DEFAULTS.propertyTaxIsFixed)
+  })
+
+  it('decodes fixed owner cost modes and yearly amounts from query values', () => {
+    const decoded = decodeInputs(
+      '?propertyTaxIsFixed=true&propertyTaxAnnualFixed=3600&maintenanceIsFixed=true&maintenanceAnnualFixed=7200',
+    )
+
+    expect(decoded.propertyTaxIsFixed).toBe(true)
+    expect(decoded.propertyTaxAnnualFixed).toBe(3600)
+    expect(decoded.maintenanceIsFixed).toBe(true)
+    expect(decoded.maintenanceAnnualFixed).toBe(7200)
   })
 })

@@ -19,7 +19,13 @@ export const NZ_DEFAULTS: Inputs = {
   amortizationYears: 30,
   interestRatePct: 5.5,
   propertyTaxRatePct: 0.3,
+  propertyTaxIsFixed: false,
+  // Matches 0.3% of the default $850k home so switching modes starts level.
+  propertyTaxAnnualFixed: 2_550,
   maintenanceCostPct: 1.0,
+  maintenanceIsFixed: false,
+  // Matches 1.0% of the default $850k home so switching modes starts level.
+  maintenanceAnnualFixed: 8_500,
   realEstateGrowthRatePct: 3.5,
   homeInsuranceMonthly: 250,
   purchaseCostsPct: 0.5,
