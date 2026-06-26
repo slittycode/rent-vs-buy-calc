@@ -12,8 +12,9 @@ interface FieldConfig {
   suffix?: string
   step?: number
   tooltip?: string
-  // If set, this field can toggle between a % (key) and a fixed $/yr amount (amountKey).
-  fixed?: { isFixedKey: BooleanInputKey; amountKey: NumericInputKey; step?: number }
+  // If set, this field can toggle between a % (key) and a fixed $ amount (amountKey).
+  // `suffix` is the fixed-mode unit (e.g. '/yr' for recurring; omit for a one-off total).
+  fixed?: { isFixedKey: BooleanInputKey; amountKey: NumericInputKey; step?: number; suffix?: string }
 }
 
 interface Section {
@@ -41,7 +42,7 @@ const SECTIONS: Section[] = [
         suffix: '%',
         step: 0.05,
         tooltip: 'Annual council rates — enter as a % of the home value, or a fixed $/yr (which grows with inflation).',
-        fixed: { isFixedKey: 'propertyTaxIsFixed', amountKey: 'propertyTaxAnnualFixed', step: 50 },
+        fixed: { isFixedKey: 'propertyTaxIsFixed', amountKey: 'propertyTaxAnnualFixed', step: 50, suffix: '/yr' },
       },
       {
         key: 'maintenanceCostPct',
@@ -49,11 +50,25 @@ const SECTIONS: Section[] = [
         suffix: '%',
         step: 0.1,
         tooltip: "Annual maintenance — enter as a % of the home's value, or a fixed $/yr (which grows with inflation).",
-        fixed: { isFixedKey: 'maintenanceIsFixed', amountKey: 'maintenanceAnnualFixed', step: 50 },
+        fixed: { isFixedKey: 'maintenanceIsFixed', amountKey: 'maintenanceAnnualFixed', step: 50, suffix: '/yr' },
       },
       { key: 'homeInsuranceMonthly', label: 'Home insurance', prefix: '$', suffix: '/mo', step: 10 },
-      { key: 'purchaseCostsPct', label: 'Purchase costs', suffix: '%', step: 0.1, tooltip: 'One-off buying costs (legal, LIM, builder’s report) as a % of price. NZ has no stamp duty. The renter invests this amount instead.' },
-      { key: 'sellingCostsPct', label: 'Selling costs', suffix: '%', step: 0.1, tooltip: 'One-off costs to sell at the end (agent commission + GST, plus legal) as a % of the sale value.' },
+      {
+        key: 'purchaseCostsPct',
+        label: 'Purchase costs',
+        suffix: '%',
+        step: 0.1,
+        tooltip: 'One-off buying costs (legal, LIM, builder’s report) — a % of price or a fixed $ total. NZ has no stamp duty, and these barely scale with price, so $ is often the better fit. The renter invests this amount instead.',
+        fixed: { isFixedKey: 'purchaseCostsIsFixed', amountKey: 'purchaseCostsFixed', step: 100 },
+      },
+      {
+        key: 'sellingCostsPct',
+        label: 'Selling costs',
+        suffix: '%',
+        step: 0.1,
+        tooltip: 'One-off costs to sell (agent commission + GST, plus legal) — a % of the sale value or a fixed $ total. Commission is usually a %, so % is the better default; if you switch to $, include the commission, not just legal.',
+        fixed: { isFixedKey: 'sellingCostsIsFixed', amountKey: 'sellingCostsFixed', step: 100 },
+      },
     ],
   },
   {
@@ -111,6 +126,7 @@ export default function InputsPanel({ inputs, update }: Props) {
           fixedValue={inputs[amountKey]}
           onFixedChange={(v) => update(amountKey, v)}
           fixedStep={f.fixed.step}
+          fixedSuffix={f.fixed.suffix}
           fixedMin={fixedLimits.min}
           fixedMax={fixedLimits.max}
         />

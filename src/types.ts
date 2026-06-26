@@ -29,7 +29,11 @@ export interface Inputs {
   realEstateGrowthRatePct: number
   homeInsuranceMonthly: number
   purchaseCostsPct: number // one-off buying costs (legal, LIM, builder's report) as % of price; no NZ stamp duty
+  purchaseCostsIsFixed: boolean // true => use purchaseCostsFixed instead of % of price
+  purchaseCostsFixed: number // one-off $ buying costs when fixed (paid up front, price-independent)
   sellingCostsPct: number // one-off costs to sell (agent commission + legal) as % of the sale value
+  sellingCostsIsFixed: boolean // true => use sellingCostsFixed instead of % of sale value
+  sellingCostsFixed: number // one-off $ selling costs when fixed (today's dollars, grown to the sale year)
 
   // Renting
   rentInsuranceMonthly: number

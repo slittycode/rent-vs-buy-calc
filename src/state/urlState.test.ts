@@ -50,4 +50,20 @@ describe('URL input decoding', () => {
   it('falls back for an invalid cost-mode flag', () => {
     expect(decodeInputs('?maintenanceIsFixed=sometimes').maintenanceIsFixed).toBe(NZ_DEFAULTS.maintenanceIsFixed)
   })
+
+  it('round-trips the transaction-cost mode flags and fixed $ amounts', () => {
+    const scenario = {
+      ...NZ_DEFAULTS,
+      purchaseCostsIsFixed: true,
+      purchaseCostsFixed: 5500,
+      sellingCostsIsFixed: true,
+      sellingCostsFixed: 28000,
+    }
+    const decoded = decodeInputs('?' + encodeInputs(scenario))
+
+    expect(decoded.purchaseCostsIsFixed).toBe(true)
+    expect(decoded.purchaseCostsFixed).toBe(5500)
+    expect(decoded.sellingCostsIsFixed).toBe(true)
+    expect(decoded.sellingCostsFixed).toBe(28000)
+  })
 })
