@@ -1,4 +1,4 @@
-import type { MonthlyCostBreakdown } from '../calc/simulate'
+import type { SimulationResult } from '../calc/simulate'
 import { formatNZD } from '../format'
 
 function Row({ label, value }: { label: string; value: number }) {
@@ -10,8 +10,10 @@ function Row({ label, value }: { label: string; value: number }) {
   )
 }
 
-export default function CostBreakdown({ b }: { b: MonthlyCostBreakdown }) {
+export default function CostBreakdown({ result, horizon }: { result: SimulationResult; horizon: number }) {
+  const b = result.firstMonth
   const diff = b.buyerTotal - b.renterTotal
+  const upfront = result.deposit + result.purchaseCostsAmount
 
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -25,6 +27,7 @@ export default function CostBreakdown({ b }: { b: MonthlyCostBreakdown }) {
               <Row label="Council rates" value={b.propertyTax} />
               <Row label="Maintenance" value={b.maintenance} />
               <Row label="Home insurance" value={b.homeInsurance} />
+              {b.otherHomeCosts > 0 && <Row label="Body corp / other" value={b.otherHomeCosts} />}
               <tr className="font-semibold">
                 <td className="py-1">Total</td>
                 <td className="py-1 text-right tabular-nums">{formatNZD(b.buyerTotal)}</td>
@@ -49,6 +52,23 @@ export default function CostBreakdown({ b }: { b: MonthlyCostBreakdown }) {
       <p className="mt-3 text-xs text-slate-500">
         Owning costs {formatNZD(Math.abs(diff))} {diff >= 0 ? 'more' : 'less'} per month than renting to start. Each
         month the cheaper side invests its surplus.
+      </p>
+
+      <h3 className="mb-2 mt-5 text-sm font-semibold uppercase tracking-wide text-slate-500">One-off costs</h3>
+      <table className="w-full text-sm">
+        <tbody>
+          <Row label="Deposit" value={result.deposit} />
+          <Row label="Buying costs (legal, LIM, report)" value={result.purchaseCostsAmount} />
+          <tr className="border-b border-slate-100 font-semibold">
+            <td className="py-1">Upfront cash to buy</td>
+            <td className="py-1 text-right tabular-nums">{formatNZD(upfront)}</td>
+          </tr>
+          <Row label={`Selling costs if sold in year ${horizon}`} value={result.sellingCostsAtHorizon} />
+        </tbody>
+      </table>
+      <p className="mt-3 text-xs text-slate-500">
+        The renter invests the {formatNZD(upfront)} of upfront cash from day one. Selling costs are deducted from the
+        home&rsquo;s value whenever you treat it as sold.
       </p>
     </div>
   )

@@ -36,6 +36,12 @@ export default function App() {
     })
   }
 
+  // Apply several fields at once — used by toggleable expenses, which update a value
+  // and its mode together.
+  function updateMany(patch: Partial<Inputs>) {
+    setInputs((prev) => ({ ...prev, ...patch }))
+  }
+
   function reset() {
     setInputs(NZ_DEFAULTS)
   }
@@ -84,7 +90,7 @@ export default function App() {
               </button>
             </div>
           </div>
-          <InputsPanel inputs={inputs} update={update} />
+          <InputsPanel inputs={inputs} update={update} updateMany={updateMany} />
         </section>
 
         <section className="order-2 space-y-5 lg:order-1">
@@ -97,7 +103,7 @@ export default function App() {
           <ChartTabs result={result} />
           <div className="space-y-5 pt-1">
             <BreakEvenSummary result={result} />
-            <CostBreakdown b={result.firstMonth} />
+            <CostBreakdown result={result} horizon={inputs.timeHorizonYears} />
             <AssumptionsNote
               marginalRatePct={marginalRate(inputs.annualIncome) * 100}
               isPortfolioTaxable={inputs.isPortfolioTaxable}
