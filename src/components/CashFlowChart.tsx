@@ -10,6 +10,8 @@ import {
   YAxis,
 } from 'recharts'
 import type { SimulationResult } from '../calc/simulate'
+import { formatNZD, formatNZDCompact } from '../format'
+import ChartTooltip from './ChartTooltip'
 import { formatNZDCompact } from '../format'
 import { ChartTooltip } from './ChartTooltip'
 
@@ -27,6 +29,7 @@ export default function CashFlowChart({ result, mortgagePaidOffYear }: Props) {
 
   return (
     <>
+      <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">Annual cash flow</h3>
       <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
         Annual cash flow
       </h3>
@@ -47,6 +50,8 @@ export default function CashFlowChart({ result, mortgagePaidOffYear }: Props) {
               width={64}
             />
             <Tooltip
+              content={<ChartTooltip formatter={formatNZD} />}
+              cursor={{ fill: '#e2e8f0', opacity: 0.35 }}
               content={(props) => (
                 <ChartTooltip
                   active={props.active}
