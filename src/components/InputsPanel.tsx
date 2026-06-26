@@ -3,6 +3,7 @@ import { LOCATIONS } from '../types'
 import { NUMERIC_INPUT_LIMITS, type NumericInputKey } from '../inputLimits'
 import InputField from './InputField'
 import ToggleableField from './ToggleableField'
+import InfoTooltip from './InfoTooltip'
 
 interface PlainConfig {
   key: NumericInputKey
@@ -237,12 +238,7 @@ function AssetAllocationSelect({ value, onChange }: { value: number; onChange: (
     <label className="block">
       <span className="flex items-center gap-1 text-sm font-medium text-slate-700">
         Asset allocation (equity)
-        <span
-          title="Equity share of the invested portfolio; changing this resets the return mix below."
-          className="inline-flex h-4 w-4 cursor-help items-center justify-center rounded-full bg-slate-200 text-[10px] font-bold text-slate-600"
-        >
-          ?
-        </span>
+        <InfoTooltip text="Equity share of the invested portfolio; changing this resets the return mix below." />
       </span>
       <select
         value={String(value)}
