@@ -31,18 +31,27 @@ The calculation engine is **pure functions** in `src/calc/`, with React (`src/co
 `SimulationResult` → components.
 
 1. **`src/types.ts`** — the `Inputs` shape, mirroring PWL's fields field-for-field. The
-   only localisation is `location` (`'New Zealand'`).
+   only localisation is `location` (`'New Zealand'`). Toggleable expenses (deposit,
+   council rates, maintenance, insurance, buying/selling costs) are stored as a `value` +
+   `…Mode` pair, where `Mode` is `'pct'` or `'dollar'` (`ExpenseMode`).
 2. **`src/calc/`** — engine:
    - `mortgage.ts` — monthly mortgage payment.
    - `tax.ts` — NZ income-tax brackets, `marginalRate`, and `afterTaxPortfolioReturn`
      (the core NZ-specific logic: capital gains untaxed, dividends/interest at marginal
-     rate, foreign-withholding-tax handling that differs by taxable vs sheltered account).
+     rate, foreign-withholding-tax handling that differs by taxable vs sheltered account,
+     minus the investment fee/MER drag).
+   - `expenses.ts` — `resolveAmount(mode, value, base)` turns a toggleable expense into
+     dollars; `convertMode()` back-calculates pct⇄dollar so toggling preserves the amount.
    - `portfolio.ts` — `compositionForAllocation()` maps the equity/bond allocation to the
      five return-composition fields. Calibration constants reproduce PWL's defaults
      exactly at 80% equity.
    - `simulate.ts` — orchestrator. Month-by-month projection of buy-with-mortgage vs
-     rent-and-invest-the-difference; returns yearly `series`, final net worths,
-     break-even year, and the first-month cost breakdown.
+     rent-and-invest-the-difference. The renter is seeded with the deposit **plus** upfront
+     buying costs; buyer net worth is the liquidation value (home value − selling cost −
+     mortgage + side portfolio); %-mode recurring costs track home value while $-mode track
+     inflation; rent escalates at its own `rentGrowthPct`. Returns yearly `series`, final
+     net worths, crossover year, the first-month cost breakdown, one-off cost amounts, and a
+     bisection-solved **break-even rent** (`solveBreakEvenRent`).
 3. **`src/state/urlState.ts`** — `encodeInputs`/`decodeInputs` serialise all inputs to URL
    query params so a scenario is a shareable link. `App.tsx` debounces (250ms) inputs into
    `history.replaceState`; on load it decodes from `window.location.search`.
@@ -67,10 +76,15 @@ The calculation engine is **pure functions** in `src/calc/`, with React (`src/co
 5. **Adding an input field** means touching, in order: `types.ts` (add to `Inputs`),
    `defaults.ts` (`NZ_DEFAULTS`), `inputLimits.ts` (if numeric), `InputsPanel.tsx` (UI), and
    `simulate.ts`/`tax.ts` if it affects the maths. `urlState` picks up new fields
-   automatically by iterating `NZ_DEFAULTS` keys.
+   automatically by iterating `NZ_DEFAULTS` keys (it now also validates `'pct'`/`'dollar'`
+   mode strings, not just `location`). For a **toggleable** expense, add both the value and
+   the `…Mode` field, render it with `ToggleableField` (which calls `updateMany` to set both
+   at once), and resolve it via `resolveAmount` in `simulate.ts`.
 6. **NZ tax scope is deliberately simplified** — FIF, PIE/PIR, imputation credits,
-   bright-line/property-sale tax, and transaction costs are *not* modelled. The smoke test
-   asserts this disclaimer text is present and that Canadian-tool wording is absent.
+   bright-line/property-sale tax, mortgage low-equity premiums, and KiwiSaver first-home
+   support are *not* modelled. Buying/selling **transaction costs and an investment fee (MER)
+   _are_** modelled. The smoke test asserts the simplified-scope disclaimer is present, that
+   transaction costs are described as modelled, and that Canadian-tool wording is absent.
 
 ## Deploy
 

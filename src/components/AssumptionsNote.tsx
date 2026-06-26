@@ -13,11 +13,18 @@ export default function AssumptionsNote({ marginalRatePct, isPortfolioTaxable }:
           New&nbsp;Zealand, which drives NZ income-tax rates in this version.
         </p>
         <p>
-          <strong>The comparison.</strong> Both paths are projected month by month. The renter invests the down payment
-          up front, then each month whichever side has the lower housing cost invests the surplus. Net worth = home
-          value − mortgage balance + any side investments, versus the renter&rsquo;s portfolio. No buying/selling
-          transaction costs are modelled. This first version assumes a main-home buyer, not an investment-property
-          landlord.
+          <strong>The comparison.</strong> Both paths are projected month by month. At purchase the buyer commits the
+          deposit plus one-off buying costs (legal, LIM, building report), and the renter invests that same upfront cash
+          instead — so the renter starts ahead by the buying costs. Each month whichever side has the lower housing cost
+          invests the surplus. Net worth is the value if you cashed out that year: home value <strong>after selling
+          costs</strong> (agent commission and legal) minus the mortgage, plus any side investments, versus the
+          renter&rsquo;s portfolio. This first version assumes a main-home buyer, not an investment-property landlord.
+        </p>
+        <p>
+          <strong>Costs as a rate or a fixed sum.</strong> Council rates, maintenance, insurance, the deposit and the
+          buying/selling costs can each be entered as a percentage of the home value or as a fixed dollar amount. A
+          percentage tracks the home as it appreciates; a fixed dollar amount escalates with inflation. Rent grows at its
+          own rate, separate from general inflation, and an investment fee (MER) is deducted from portfolio returns.
         </p>
         <p>
           <strong>NZ tax on investments.</strong> The portfolio return is split by tax type, then taxed under NZ rules:
@@ -31,9 +38,14 @@ export default function AssumptionsNote({ marginalRatePct, isPortfolioTaxable }:
         </p>
         <p>
           <strong>Caveats.</strong> Figures are in today&rsquo;s nominal dollars, a single fixed mortgage rate is assumed
-          for the whole term, and returns are smooth averages. FIF rules, PIE/PIR tax treatment, dividend imputation
-          credits, bright-line/property-sale tax, and transaction costs are not modelled. This is a simplified tool to
-          aid thinking, not financial advice.
+          for the whole term, and returns are smooth averages. Council rates and maintenance can be entered as a home-value
+          percentage or a fixed yearly amount; fixed yearly amounts rise with inflation. Transaction costs are modelled
+          only as flat percentages (no fixed-fee detail). FIF rules, PIE/PIR tax treatment, dividend imputation credits,
+          and bright-line/property-sale tax are not modelled. This is a simplified tool to aid thinking, not financial
+          for the whole term, and returns are smooth averages. Buying and selling transaction costs are modelled, but FIF
+          rules, PIE/PIR tax treatment, dividend imputation credits, bright-line/property-sale tax, mortgage low-equity
+          premiums, and KiwiSaver first-home support are not. This is a simplified tool to aid thinking, not financial
+          advice.
         </p>
         <p>
           <strong>Sharing and privacy.</strong> The app runs in your browser. It has no backend, accounts, API keys, or
