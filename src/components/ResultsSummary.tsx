@@ -53,18 +53,27 @@ export default function ResultsSummary({ result, horizon, rentMonthly, purchaseP
 }
 
 export function BreakEvenSummary({ result }: { result: SimulationResult }) {
+  const be = result.breakEvenRent
+  // A null break-even means no crossover rent exists in range: either buying wins at
+  // every rent (difference already positive) or it loses at any plausible rent.
+  const breakEvenValue =
+    be === null ? (result.difference >= 0 ? 'Buying wins at any rent' : 'Renting wins at any rent') : `${formatNZD(be)}/mo`
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-      <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">Break-even</h3>
+      <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">Break-even &amp; key figures</h3>
       <dl className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
         <Stat
           label="First year buying catches up"
           value={result.crossoverYear === null ? 'Not within horizon' : `Year ${result.crossoverYear}`}
         />
-        <Stat label="Portfolio return after tax" value={formatPct(result.afterTaxReturnPct)} />
+        <Stat label="Break-even rent" value={breakEvenValue} />
+        <Stat label="Portfolio return (after tax & fees)" value={formatPct(result.afterTaxReturnPct)} />
+        <Stat label="Mortgage payment (P&I)" value={`${formatNZD(result.monthlyPaymentPI)}/mo`} />
       </dl>
       <p className="mt-3 text-xs text-slate-500">
-        Break-even means the first projected year where buying is worth at least as much as renting and investing.
+        <strong>Break-even rent</strong> is the monthly rent that would leave renting and buying level at your horizon:
+        below it renting comes out ahead, above it buying does. The crossover year is the first projected year buying is
+        worth at least as much as renting and investing.
       </p>
     </div>
   )

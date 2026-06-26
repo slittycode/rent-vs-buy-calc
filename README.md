@@ -3,8 +3,9 @@
 A near-exact clone of [PWL Capital's Rent vs Buy calculator](https://research-tools.pwlcapital.com/research/rent-vs-buy)
 (the Canadian tool behind Ben Felix's "5% rule"), localised for **New Zealand**.
 
-It keeps PWL's input fields and methodology unchanged — the **location** is New Zealand,
-which drives **NZ income-tax rates** and **NZ investment-tax treatment**.
+It keeps PWL's input fields and methodology, localised for **New Zealand**: the location
+drives **NZ income-tax rates** and **NZ investment-tax treatment**, plus NZ buying and
+selling **transaction costs**.
 
 > ⚠️ Educational tool, **not financial advice**. Tax rules are simplified — check
 > with a professional before deciding.
@@ -30,10 +31,10 @@ which drives **NZ income-tax rates** and **NZ investment-tax treatment**.
 It projects two paths month by month over your time horizon — **buy with a
 mortgage** vs **rent and invest the difference** — and compares net worth:
 
-- **Renter** invests the down payment up front, then each month whichever side has
-  the lower housing cost invests the surplus.
-- **Net worth** = home value − mortgage balance + any side investments, versus the
-  renter's portfolio.
+- **Renter** invests the deposit plus the buyer's one-off purchase costs up front, then
+  each month whichever side has the lower housing cost invests the surplus.
+- **Net worth** = home value (less selling costs) − mortgage balance + any side
+  investments, versus the renter's portfolio.
 
 Outputs: the headline verdict, the break-even year, a net-worth-over-time chart, and
 a first-month cost breakdown. Every input is encoded in the URL, so a scenario is a
@@ -51,10 +52,13 @@ are kept exactly — but taxed under **NZ rules**:
 - **Foreign withholding tax** applies to foreign dividends (creditable in a taxable
   account; a pure leak in a sheltered one).
 - No exit/capital-gains tax, so the final portfolio value is already after-tax.
+- **Transaction costs** are modelled as flat percentages: one-off purchase costs
+  (legal, LIM, builder's report — NZ has no stamp duty), and selling costs (agent
+  commission + legal) taken off the sale value at the horizon.
 - This first version assumes a main-home buyer, not an investment-property
   landlord.
-- FIF rules, PIE/PIR tax treatment, dividend imputation credits,
-  bright-line/property-sale tax, and transaction costs are not modelled.
+- FIF rules, PIE/PIR tax treatment, dividend imputation credits, and
+  bright-line/property-sale tax are not modelled.
 
 The **asset allocation** input sets the equity/bond split and resets the return-mix
 fields accordingly (at 80% equity they match PWL's defaults exactly); you can then

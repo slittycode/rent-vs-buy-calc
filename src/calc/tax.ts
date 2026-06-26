@@ -57,6 +57,7 @@ export interface PortfolioTaxInputs {
   realizedGainsPct: number
   interestIncomePct: number
   foreignWithholdingTaxPct: number
+  investmentFeePct: number // annual fund/management fee (MER) — a flat drag on the return
 }
 
 /** Total expected nominal return (fraction) = sum of the composition fields. */
@@ -87,7 +88,11 @@ export function portfolioTaxDrag(p: PortfolioTaxInputs): number {
   return (p.foreignDividendsPct * f) / 100
 }
 
-/** Expected after-tax annual return (fraction) on the portfolio. */
+/**
+ * Expected after-tax, after-fee annual return (fraction) on the portfolio.
+ * The management fee (MER) is modelled the way PWL does — a flat drag on the
+ * return, applied on top of the NZ tax drag.
+ */
 export function afterTaxPortfolioReturn(p: PortfolioTaxInputs): number {
-  return grossPortfolioReturn(p) - portfolioTaxDrag(p)
+  return grossPortfolioReturn(p) - portfolioTaxDrag(p) - (p.investmentFeePct ?? 0) / 100
 }
