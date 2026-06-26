@@ -15,7 +15,8 @@ export const NZ_DEFAULTS: Inputs = {
   annualIncome: 90_000,
 
   purchasePrice: DEFAULT_PRICE,
-  downPaymentPct: 20,
+  downPayment: 20,
+  downPaymentMode: 'pct',
   amortizationYears: 30,
   interestRatePct: 5.5,
   propertyTaxRatePct: 0.3,
@@ -26,16 +27,29 @@ export const NZ_DEFAULTS: Inputs = {
   maintenanceIsFixed: false,
   // Matches 1.0% of the default $850k home so switching modes starts level.
   maintenanceAnnualFixed: 8_500,
-  realEstateGrowthRatePct: 3.5,
-  homeInsuranceMonthly: 250,
-  purchaseCostsPct: 0.5,
-  sellingCostsPct: 3.0,
+  // NZ has no stamp duty; buying costs are mainly legal + LIM + building report.
+  purchaseCosts: 2_500,
+  purchaseCostsMode: 'dollar',
+  // Agent commission (~2.5–4%) plus legal, as a share of the sale price.
+  sellingCosts: 2.9,
+  sellingCostsMode: 'pct',
 
-  rentInsuranceMonthly: 30,
+  propertyTax: 0.3,
+  propertyTaxMode: 'pct',
+  maintenance: 1.0,
+  maintenanceMode: 'pct',
+  homeInsurance: 3_000,
+  homeInsuranceMode: 'dollar',
+  otherHomeCostsMonthly: 0,
+  realEstateGrowthRatePct: 3.5,
+
   rentMonthly: Math.round((DEFAULT_PRICE * 0.04) / 12),
+  rentInsuranceMonthly: 30,
+  rentGrowthPct: 3.0,
 
   assetAllocationPct: DEFAULT_ALLOCATION,
   inflationPct: 2.5,
+  investmentFeePct: 0.25,
 
   ...composition,
   foreignWithholdingTaxPct: 15,

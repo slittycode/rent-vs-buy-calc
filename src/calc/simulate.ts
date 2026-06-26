@@ -1,6 +1,7 @@
 import type { Inputs } from '../types'
 import { monthlyMortgagePayment } from './mortgage'
 import { afterTaxPortfolioReturn } from './tax'
+import { resolveAmount } from './expenses'
 
 /** Net worth (and components) for both parties at one yearly snapshot. */
 export interface YearPoint {
@@ -8,8 +9,9 @@ export interface YearPoint {
   homeValue: number
   mortgageBalance: number
   homeEquity: number // homeValue - mortgageBalance
+  sellingCost: number // cost to sell the home at this point (agent + legal)
   buyerPortfolio: number // side investments the buyer makes when renting would cost more
-  buyerNetWorth: number // home equity + side portfolio
+  buyerNetWorth: number // home equity − selling cost + side portfolio (value if you sold now)
   renterNetWorth: number // the invested-difference portfolio (after-tax, no NZ exit CGT)
   buyerAnnualCost: number // total buyer cash outflow for that projection year
   renterAnnualCost: number // total renter cash outflow for that projection year
@@ -22,6 +24,7 @@ export interface MonthlyCostBreakdown {
   propertyTax: number
   maintenance: number
   homeInsurance: number
+  otherHomeCosts: number
   buyerTotal: number
   rent: number
   rentInsurance: number
@@ -35,38 +38,69 @@ export interface SimulationResult {
   difference: number // buyer - renter at the horizon (positive => buying ahead)
   buyingWins: boolean
   crossoverYear: number | null // first year buying is at least level with renting
-  afterTaxReturnPct: number // blended portfolio after-tax return used (annual %)
+  afterTaxReturnPct: number // blended portfolio after-tax, after-fee return used (annual %)
   firstMonth: MonthlyCostBreakdown
   loanAmount: number
-  purchaseCosts: number // one-off buying costs paid up front (the renter invests this instead)
-  sellingCostsAtHorizon: number // one-off selling costs deducted from the home's value at the horizon
+  deposit: number // resolved down payment in dollars
+  purchaseCostsAmount: number // resolved one-time buying costs in dollars
+  sellingCostsAtHorizon: number // resolved selling cost at the final year, in dollars
+  monthlyPaymentPI: number // level principal+interest payment
+  breakEvenRent: number | null // monthly rent that equalises final net worth (today's $)
 }
 
-const monthlyRate = (annualFraction: number) => Math.pow(1 + annualFraction, 1 / 12) - 1
+/** Convert an annual growth fraction to its equivalent monthly rate, guarding against NaN. */
+const monthlyRate = (annualFraction: number) => Math.pow(Math.max(1e-9, 1 + annualFraction), 1 / 12) - 1
+
+interface Projection {
+  series: YearPoint[]
+  firstMonth: MonthlyCostBreakdown
+  loanAmount: number
+  deposit: number
+  purchaseCostsAmount: number
+  sellingCostsAtHorizon: number
+  monthlyPaymentPI: number
+  afterTaxAnnual: number
+}
 
 /**
  * Month-by-month projection of buying vs renting-and-investing-the-difference,
- * mirroring PWL's methodology: the renter invests the down payment up front, and
- * each month whichever party has the lower housing cost invests the surplus.
- * Net worth = home equity + side investments vs the portfolio.
+ * mirroring PWL's methodology:
+ *   - The renter invests, up front, the cash the buyer commits at purchase: the
+ *     deposit plus one-time buying costs. So the renter starts ahead by exactly
+ *     those buying costs.
+ *   - Each month whichever party has the lower housing cost invests the surplus,
+ *     and both portfolios compound at the after-tax, after-fee return.
+ *   - Recurring home costs (rates, maintenance, insurance) are read either as a
+ *     percentage of the home value (so they scale as the home appreciates) or as a
+ *     fixed dollar amount (which escalates with inflation), depending on the mode.
+ *   - Net worth at any year is the *liquidation* value: home value − selling cost −
+ *     mortgage balance + side portfolio, versus the renter's portfolio.
  */
-export function simulate(inputs: Inputs): SimulationResult {
+function project(inputs: Inputs): Projection {
   const months = Math.max(1, Math.round(inputs.timeHorizonYears * 12))
-  const loanAmount = inputs.purchasePrice * (1 - inputs.downPaymentPct / 100)
-  const deposit = inputs.purchasePrice * (inputs.downPaymentPct / 100)
+
+  const deposit = Math.min(
+    inputs.purchasePrice,
+    Math.max(0, resolveAmount(inputs.downPaymentMode, inputs.downPayment, inputs.purchasePrice)),
+  )
+  const loanAmount = Math.max(0, inputs.purchasePrice - deposit)
+  const purchaseCostsAmount = Math.max(
+    0,
+    resolveAmount(inputs.purchaseCostsMode, inputs.purchaseCosts, inputs.purchasePrice),
+  )
   const payment = monthlyMortgagePayment(loanAmount, inputs.interestRatePct, inputs.amortizationYears)
   const mRate = inputs.interestRatePct / 100 / 12
-
-  // One-off transaction costs. Buying costs are paid up front; the renter invests that
-  // cash instead. Selling costs are a % of the sale value, netted out of the buyer's net
-  // worth at every snapshot ("net worth if the home were sold today").
-  const purchaseCosts = inputs.purchasePrice * (inputs.purchaseCostsPct / 100)
-  const sellFrac = inputs.sellingCostsPct / 100
 
   const afterTaxAnnual = afterTaxPortfolioReturn(inputs)
   const investM = monthlyRate(afterTaxAnnual)
   const inflM = monthlyRate(inputs.inflationPct / 100)
+  const rentGrowthM = monthlyRate(inputs.rentGrowthPct / 100)
   const houseGrowthM = monthlyRate(inputs.realEstateGrowthRatePct / 100)
+
+  // Resolve recurring expense to a current monthly dollar amount, by mode.
+  const ptPct = inputs.propertyTaxMode === 'pct'
+  const mtPct = inputs.maintenanceMode === 'pct'
+  const hiPct = inputs.homeInsuranceMode === 'pct'
 
   let balance = loanAmount
   let homeValue = inputs.purchasePrice
@@ -75,15 +109,20 @@ export function simulate(inputs: Inputs): SimulationResult {
   let rentIns = inputs.rentInsuranceMonthly
   let propTaxFixedM = inputs.propertyTaxAnnualFixed / 12
   let maintFixedM = inputs.maintenanceAnnualFixed / 12
+  let inflationIndex = 1 // escalates fixed-dollar costs by inflation over time
 
-  // Renter invests the cash the buyer ties up up front: the deposit plus buying costs.
-  let renterPortfolio = deposit + purchaseCosts
+  let renterPortfolio = deposit + purchaseCostsAmount // renter invests the buyer's upfront cash
   let buyerPortfolio = 0
 
-  // Buyer's realisable net worth: home value less selling costs, less the mortgage, plus
-  // any side investments. Selling costs apply to the home only (the portfolio has no NZ
-  // exit/CGT). homeEquity below stays gross (value − balance) for transparency.
-  const buyerNetWorth = () => homeValue * (1 - sellFrac) - balance + buyerPortfolio
+  const sellingCostAt = (value: number) =>
+    Math.max(
+      0,
+      inputs.sellingCostsMode === 'pct'
+        ? resolveAmount('pct', inputs.sellingCosts, value)
+        : inputs.sellingCosts * inflationIndex,
+    )
+
+  const buyerNetWorth = () => homeValue - sellingCostAt(homeValue) - balance + buyerPortfolio
 
   const series: YearPoint[] = [
     {
@@ -91,6 +130,7 @@ export function simulate(inputs: Inputs): SimulationResult {
       homeValue,
       mortgageBalance: balance,
       homeEquity: homeValue - balance,
+      sellingCost: sellingCostAt(homeValue),
       buyerPortfolio,
       buyerNetWorth: buyerNetWorth(),
       renterNetWorth: renterPortfolio,
@@ -124,6 +164,20 @@ export function simulate(inputs: Inputs): SimulationResult {
       : (homeValue * (inputs.maintenanceCostPct / 100)) / 12
     const buyerCost = mortgageOutflow + propertyTax + maintenance + homeIns
     const renterCost = rent + rentIns
+    const propertyTax = ptPct
+      ? (homeValue * (inputs.propertyTax / 100)) / 12
+      : (inputs.propertyTax * inflationIndex) / 12
+    const maintenance = mtPct
+      ? (homeValue * (inputs.maintenance / 100)) / 12
+      : (inputs.maintenance * inflationIndex) / 12
+    const homeInsurance = hiPct
+      ? (homeValue * (inputs.homeInsurance / 100)) / 12
+      : (inputs.homeInsurance * inflationIndex) / 12
+    const otherHomeCosts = inputs.otherHomeCostsMonthly * inflationIndex
+    const rentInsurance = inputs.rentInsuranceMonthly * inflationIndex
+
+    const buyerCost = mortgageOutflow + propertyTax + maintenance + homeInsurance + otherHomeCosts
+    const renterCost = rent + rentInsurance
     buyerAnnualCost += buyerCost
     renterAnnualCost += renterCost
 
@@ -132,10 +186,11 @@ export function simulate(inputs: Inputs): SimulationResult {
         mortgagePayment: mortgageOutflow,
         propertyTax,
         maintenance,
-        homeInsurance: homeIns,
+        homeInsurance,
+        otherHomeCosts,
         buyerTotal: buyerCost,
         rent,
-        rentInsurance: rentIns,
+        rentInsurance,
         renterTotal: renterCost,
       }
     }
@@ -154,6 +209,8 @@ export function simulate(inputs: Inputs): SimulationResult {
     rentIns *= 1 + inflM
     propTaxFixedM *= 1 + inflM
     maintFixedM *= 1 + inflM
+    rent *= 1 + rentGrowthM
+    inflationIndex *= 1 + inflM
 
     if (m % 12 === 0) {
       series.push({
@@ -161,6 +218,7 @@ export function simulate(inputs: Inputs): SimulationResult {
         homeValue,
         mortgageBalance: balance,
         homeEquity: homeValue - balance,
+        sellingCost: sellingCostAt(homeValue),
         buyerPortfolio,
         buyerNetWorth: buyerNetWorth(),
         renterNetWorth: renterPortfolio,
@@ -174,6 +232,59 @@ export function simulate(inputs: Inputs): SimulationResult {
   }
 
   const last = series[series.length - 1]
+
+  return {
+    series,
+    firstMonth: firstMonth!,
+    loanAmount,
+    deposit,
+    purchaseCostsAmount,
+    sellingCostsAtHorizon: last.sellingCost,
+    monthlyPaymentPI: payment,
+    afterTaxAnnual,
+  }
+}
+
+/**
+ * The monthly rent (in today's dollars) at which the two paths end with the same
+ * net worth — the "indifference rent". Net worth difference (buyer − renter) is
+ * increasing in rent, so we bracket a sign change and bisect. Returns null when no
+ * crossover exists in a sensible range (e.g. buying never catches up).
+ */
+function solveBreakEvenRent(inputs: Inputs): number | null {
+  const diffAtRent = (rentMonthly: number) => {
+    const p = project({ ...inputs, rentMonthly })
+    const last = p.series[p.series.length - 1]
+    return last.buyerNetWorth - last.renterNetWorth
+  }
+
+  const f0 = diffAtRent(0)
+  if (f0 === 0) return 0
+  if (f0 > 0) return null // buying already wins at zero rent — no positive break-even rent
+
+  let hi = Math.max(inputs.rentMonthly, 500)
+  let fhi = diffAtRent(hi)
+  let guard = 0
+  while (fhi < 0 && guard < 40) {
+    hi *= 2
+    fhi = diffAtRent(hi)
+    guard++
+  }
+  if (fhi < 0) return null // no sign change found within range
+
+  let lo = 0
+  for (let i = 0; i < 60; i++) {
+    const mid = (lo + hi) / 2
+    if (diffAtRent(mid) < 0) lo = mid
+    else hi = mid
+  }
+  return (lo + hi) / 2
+}
+
+export function simulate(inputs: Inputs): SimulationResult {
+  const core = project(inputs)
+  const { series } = core
+  const last = series[series.length - 1]
   const crossover = series.find((p) => p.year > 0 && p.buyerNetWorth >= p.renterNetWorth)
 
   return {
@@ -183,10 +294,13 @@ export function simulate(inputs: Inputs): SimulationResult {
     difference: last.buyerNetWorth - last.renterNetWorth,
     buyingWins: last.buyerNetWorth >= last.renterNetWorth,
     crossoverYear: crossover ? crossover.year : null,
-    afterTaxReturnPct: afterTaxAnnual * 100,
-    firstMonth: firstMonth!,
-    loanAmount,
-    purchaseCosts,
-    sellingCostsAtHorizon: last.homeValue * sellFrac,
+    afterTaxReturnPct: core.afterTaxAnnual * 100,
+    firstMonth: core.firstMonth,
+    loanAmount: core.loanAmount,
+    deposit: core.deposit,
+    purchaseCostsAmount: core.purchaseCostsAmount,
+    sellingCostsAtHorizon: core.sellingCostsAtHorizon,
+    monthlyPaymentPI: core.monthlyPaymentPI,
+    breakEvenRent: solveBreakEvenRent(inputs),
   }
 }
