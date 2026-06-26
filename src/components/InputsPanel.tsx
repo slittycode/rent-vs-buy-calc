@@ -1,97 +1,114 @@
-import type { Inputs, Location } from '../types'
+import type { Inputs, Location, ExpenseMode } from '../types'
 import { LOCATIONS } from '../types'
-import { NUMERIC_INPUT_LIMITS, type NumericInputKey, type BooleanInputKey } from '../inputLimits'
+import { NUMERIC_INPUT_LIMITS, type NumericInputKey } from '../inputLimits'
 import InputField from './InputField'
+import ToggleableField from './ToggleableField'
 import InfoTooltip from './InfoTooltip'
-import CostModeField from './CostModeField'
 
-interface FieldConfig {
+interface PlainConfig {
   key: NumericInputKey
   label: string
   prefix?: string
   suffix?: string
   step?: number
   tooltip?: string
-  // If set, this field can toggle between a % (key) and a fixed $ amount (amountKey).
-  // `suffix` is the fixed-mode unit (e.g. '/yr' for recurring; omit for a one-off total).
-  fixed?: { isFixedKey: BooleanInputKey; amountKey: NumericInputKey; step?: number; suffix?: string }
 }
 
-interface Section {
-  title: string
-  hint?: string
-  fields: FieldConfig[]
+interface ToggleConfig {
+  valueKey: NumericInputKey
+  modeKey: keyof Inputs
+  label: string
+  periodLabel?: string
+  tooltip?: string
+  pctStep?: number
+  dollarStep?: number
+  pctMax?: number
 }
 
-const TOP_FIELDS: FieldConfig[] = [
-  { key: 'annualIncome', label: 'Annual income', prefix: '$', step: 1000, tooltip: 'Gross income - sets your NZ marginal tax rate.' },
+const TOP_FIELDS: PlainConfig[] = [
+  { key: 'annualIncome', label: 'Annual income', prefix: '$', step: 1000, tooltip: 'Gross income — sets your NZ marginal tax rate.' },
   { key: 'timeHorizonYears', label: 'Time horizon', suffix: 'yrs', tooltip: 'The period to compare over.' },
 ]
 
-const SECTIONS: Section[] = [
-  {
-    title: 'Buy',
-    fields: [
-      { key: 'purchasePrice', label: 'Purchase price', prefix: '$', step: 5000 },
-      { key: 'downPaymentPct', label: 'Down payment', suffix: '%', step: 1 },
-      { key: 'amortizationYears', label: 'Mortgage term', suffix: 'yrs', step: 1, tooltip: 'The mortgage amortisation period.' },
-      { key: 'interestRatePct', label: 'Interest rate', suffix: '%', step: 0.1 },
-      {
-        key: 'propertyTaxRatePct',
-        label: 'Council rates',
-        suffix: '%',
-        step: 0.05,
-        tooltip: 'Annual council rates — enter as a % of the home value, or a fixed $/yr (which grows with inflation).',
-        fixed: { isFixedKey: 'propertyTaxIsFixed', amountKey: 'propertyTaxAnnualFixed', step: 50, suffix: '/yr' },
-      },
-      {
-        key: 'maintenanceCostPct',
-        label: 'Maintenance',
-        suffix: '%',
-        step: 0.1,
-        tooltip: "Annual maintenance — enter as a % of the home's value, or a fixed $/yr (which grows with inflation).",
-        fixed: { isFixedKey: 'maintenanceIsFixed', amountKey: 'maintenanceAnnualFixed', step: 50, suffix: '/yr' },
-      },
-      { key: 'homeInsuranceMonthly', label: 'Home insurance', prefix: '$', suffix: '/mo', step: 10 },
-      {
-        key: 'purchaseCostsPct',
-        label: 'Purchase costs',
-        suffix: '%',
-        step: 0.1,
-        tooltip: 'One-off buying costs (legal, LIM, builder’s report) — a % of price or a fixed $ total. NZ has no stamp duty, and these barely scale with price, so $ is often the better fit. The renter invests this amount instead.',
-        fixed: { isFixedKey: 'purchaseCostsIsFixed', amountKey: 'purchaseCostsFixed', step: 100 },
-      },
-      {
-        key: 'sellingCostsPct',
-        label: 'Selling costs',
-        suffix: '%',
-        step: 0.1,
-        tooltip: 'One-off costs to sell (agent commission + GST, plus legal) — a % of the sale value or a fixed $ total. Commission is usually a %, so % is the better default; if you switch to $, include the commission, not just legal.',
-        fixed: { isFixedKey: 'sellingCostsIsFixed', amountKey: 'sellingCostsFixed', step: 100 },
-      },
-    ],
+// Toggleable home expenses: each switches between a % of the home value/price and a fixed $.
+const BUY_TOGGLES: Record<string, ToggleConfig> = {
+  downPayment: {
+    valueKey: 'downPayment',
+    modeKey: 'downPaymentMode',
+    label: 'Deposit',
+    tooltip: 'Up-front deposit, as a % of the price or a fixed $ amount.',
+    pctStep: 1,
+    dollarStep: 5000,
+    pctMax: 100,
   },
-  {
-    title: 'Rent',
-    fields: [
-      { key: 'rentMonthly', label: 'Rent', prefix: '$', suffix: '/mo', step: 50 },
-      { key: 'rentInsuranceMonthly', label: 'Contents insurance', prefix: '$', suffix: '/mo', step: 5 },
-    ],
+  purchaseCosts: {
+    valueKey: 'purchaseCosts',
+    modeKey: 'purchaseCostsMode',
+    label: 'Buying costs',
+    tooltip: 'One-off costs to buy: legal, LIM, building report. NZ has no stamp duty.',
+    pctStep: 0.1,
+    dollarStep: 500,
   },
-  {
-    title: 'Expected Returns',
-    hint: 'Annual return split by tax type (% of portfolio). Derived from your asset allocation, but editable. In NZ the capital-gains rows are not taxed.',
-    fields: [
-      { key: 'inflationPct', label: 'Inflation', suffix: '%', step: 0.1, tooltip: 'Grows rent and insurance over time.' },
-      { key: 'realEstateGrowthRatePct', label: 'Real estate growth', suffix: '%', step: 0.1, tooltip: 'Expected annual house-price appreciation.' },
-      { key: 'eligibleDividendsPct', label: 'NZ dividends', suffix: '%', step: 0.05, tooltip: 'Taxed at your NZ marginal rate in this simplified model.' },
-      { key: 'foreignDividendsPct', label: 'Foreign dividends', suffix: '%', step: 0.05, tooltip: 'Taxed at your marginal rate; foreign withholding tax credited.' },
-      { key: 'realizedGainsPct', label: 'Realised capital gains', suffix: '%', step: 0.05, tooltip: 'Not taxed in this simplified NZ model.' },
-      { key: 'unrealizedGainsPct', label: 'Unrealised capital gains', suffix: '%', step: 0.05, tooltip: 'Not taxed in this simplified NZ model.' },
-      { key: 'interestIncomePct', label: 'Interest income', suffix: '%', step: 0.05, tooltip: 'Taxed at your NZ marginal rate.' },
-      { key: 'foreignWithholdingTaxPct', label: 'Foreign withholding tax', suffix: '%', step: 1, tooltip: 'Rate withheld at source on foreign dividends.' },
-    ],
+  sellingCosts: {
+    valueKey: 'sellingCosts',
+    modeKey: 'sellingCostsMode',
+    label: 'Selling costs',
+    tooltip: 'Costs to sell at the end of the horizon: agent commission plus legal.',
+    pctStep: 0.1,
+    dollarStep: 1000,
   },
+  propertyTax: {
+    valueKey: 'propertyTax',
+    modeKey: 'propertyTaxMode',
+    label: 'Council rates',
+    periodLabel: '/yr',
+    tooltip: 'Annual council rates: a % of the home value, or a fixed $/yr.',
+    pctStep: 0.05,
+    dollarStep: 250,
+  },
+  maintenance: {
+    valueKey: 'maintenance',
+    modeKey: 'maintenanceMode',
+    label: 'Maintenance',
+    periodLabel: '/yr',
+    tooltip: 'Annual upkeep: a % of the home value, or a fixed $/yr.',
+    pctStep: 0.1,
+    dollarStep: 250,
+  },
+  homeInsurance: {
+    valueKey: 'homeInsurance',
+    modeKey: 'homeInsuranceMode',
+    label: 'Home insurance',
+    periodLabel: '/yr',
+    tooltip: 'Annual house insurance: a fixed $/yr, or a % of the home value.',
+    pctStep: 0.05,
+    dollarStep: 250,
+  },
+}
+
+const BUY_PLAIN: Record<string, PlainConfig> = {
+  purchasePrice: { key: 'purchasePrice', label: 'Purchase price', prefix: '$', step: 5000 },
+  interestRatePct: { key: 'interestRatePct', label: 'Interest rate', suffix: '%', step: 0.1 },
+  amortizationYears: { key: 'amortizationYears', label: 'Mortgage term', suffix: 'yrs', step: 1, tooltip: 'The mortgage amortisation period.' },
+  otherHomeCostsMonthly: { key: 'otherHomeCostsMonthly', label: 'Body corp / other', prefix: '$', suffix: '/mo', step: 10, tooltip: 'Fixed monthly home costs such as body corporate or HOA fees.' },
+  realEstateGrowthRatePct: { key: 'realEstateGrowthRatePct', label: 'Home price growth', suffix: '%', step: 0.1, tooltip: 'Expected annual house-price appreciation.' },
+}
+
+const RENT_FIELDS: PlainConfig[] = [
+  { key: 'rentMonthly', label: 'Rent', prefix: '$', suffix: '/mo', step: 50 },
+  { key: 'rentInsuranceMonthly', label: 'Contents insurance', prefix: '$', suffix: '/mo', step: 5 },
+  { key: 'rentGrowthPct', label: 'Rent growth', suffix: '%', step: 0.1, tooltip: 'Annual rent increase, independent of general inflation.' },
+]
+
+const RETURN_FIELDS: PlainConfig[] = [
+  { key: 'inflationPct', label: 'Inflation', suffix: '%', step: 0.1, tooltip: 'General inflation; escalates fixed-dollar costs over time.' },
+  { key: 'investmentFeePct', label: 'Investment fee (MER)', suffix: '%', step: 0.05, tooltip: 'Annual fund/management fee; a drag on portfolio returns.' },
+  { key: 'eligibleDividendsPct', label: 'NZ dividends', suffix: '%', step: 0.05, tooltip: 'Taxed at your NZ marginal rate in this simplified model.' },
+  { key: 'foreignDividendsPct', label: 'Foreign dividends', suffix: '%', step: 0.05, tooltip: 'Taxed at your marginal rate; foreign withholding tax credited.' },
+  { key: 'realizedGainsPct', label: 'Realised capital gains', suffix: '%', step: 0.05, tooltip: 'Not taxed in this simplified NZ model.' },
+  { key: 'unrealizedGainsPct', label: 'Unrealised capital gains', suffix: '%', step: 0.05, tooltip: 'Not taxed in this simplified NZ model.' },
+  { key: 'interestIncomePct', label: 'Interest income', suffix: '%', step: 0.05, tooltip: 'Taxed at your NZ marginal rate.' },
+  { key: 'foreignWithholdingTaxPct', label: 'Foreign withholding tax', suffix: '%', step: 1, tooltip: 'Rate withheld at source on foreign dividends.' },
 ]
 
 const ASSET_ALLOCATION_PRESETS = Array.from({ length: 21 }, (_, i) => i * 5)
@@ -99,39 +116,17 @@ const ASSET_ALLOCATION_PRESETS = Array.from({ length: 21 }, (_, i) => i * 5)
 interface Props {
   inputs: Inputs
   update: <K extends keyof Inputs>(key: K, value: Inputs[K]) => void
+  updateMany: (patch: Partial<Inputs>) => void
 }
 
 const cardClass = 'rounded-xl border border-slate-200 bg-white p-4 shadow-sm'
 const headingClass = 'mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500'
+const sectionSummaryClass = 'cursor-pointer text-sm font-semibold uppercase tracking-wide text-slate-500'
+const gridClass = 'mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2'
 
-export default function InputsPanel({ inputs, update }: Props) {
-  function renderField(f: FieldConfig) {
+export default function InputsPanel({ inputs, update, updateMany }: Props) {
+  function plain(f: PlainConfig) {
     const limits = NUMERIC_INPUT_LIMITS[f.key]
-    if (f.fixed) {
-      const isFixedKey = f.fixed.isFixedKey
-      const amountKey = f.fixed.amountKey
-      const fixedLimits = NUMERIC_INPUT_LIMITS[amountKey]
-      return (
-        <CostModeField
-          key={f.key}
-          label={f.label}
-          tooltip={f.tooltip}
-          isFixed={inputs[isFixedKey]}
-          onModeChange={(v) => update(isFixedKey, v)}
-          pctValue={inputs[f.key]}
-          onPctChange={(v) => update(f.key, v)}
-          pctStep={f.step}
-          pctMin={limits.min}
-          pctMax={limits.max}
-          fixedValue={inputs[amountKey]}
-          onFixedChange={(v) => update(amountKey, v)}
-          fixedStep={f.fixed.step}
-          fixedSuffix={f.fixed.suffix}
-          fixedMin={fixedLimits.min}
-          fixedMax={fixedLimits.max}
-        />
-      )
-    }
     return (
       <InputField
         key={f.key}
@@ -148,6 +143,24 @@ export default function InputsPanel({ inputs, update }: Props) {
     )
   }
 
+  function toggle(c: ToggleConfig) {
+    return (
+      <ToggleableField
+        key={c.valueKey}
+        label={c.label}
+        value={inputs[c.valueKey]}
+        mode={inputs[c.modeKey] as ExpenseMode}
+        base={inputs.purchasePrice}
+        periodLabel={c.periodLabel}
+        tooltip={c.tooltip}
+        pctStep={c.pctStep}
+        dollarStep={c.dollarStep}
+        pctMax={c.pctMax}
+        onChange={(value, mode) => updateMany({ [c.valueKey]: value, [c.modeKey]: mode } as Partial<Inputs>)}
+      />
+    )
+  }
+
   return (
     <div className="space-y-4">
       <div className={cardClass}>
@@ -158,7 +171,7 @@ export default function InputsPanel({ inputs, update }: Props) {
             <select
               value={inputs.location}
               onChange={(e) => update('location', e.target.value as Location)}
-              className="mt-1 w-full rounded-md border border-slate-300 bg-white px-2 py-2.5 text-sm text-slate-900 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
+              className="mt-1 w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-900 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
             >
               {LOCATIONS.map((l) => (
                 <option key={l} value={l}>
@@ -167,35 +180,52 @@ export default function InputsPanel({ inputs, update }: Props) {
               ))}
             </select>
           </label>
-          {TOP_FIELDS.map(renderField)}
+          {TOP_FIELDS.map(plain)}
         </div>
       </div>
 
-      {SECTIONS.map((section) => (
-        <details key={section.title} className={cardClass} open>
-          <summary className="cursor-pointer text-sm font-semibold uppercase tracking-wide text-slate-500">
-            {section.title}
-          </summary>
-          {section.hint && <p className="mt-3 text-xs text-slate-500">{section.hint}</p>}
-          <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {section.title === 'Expected Returns' && (
-              <>
-                <label className="flex cursor-pointer items-center gap-2 self-end pb-1.5">
-                  <input
-                    type="checkbox"
-                    checked={inputs.isPortfolioTaxable}
-                    onChange={(e) => update('isPortfolioTaxable', e.target.checked)}
-                    className="h-5 w-5 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
-                  />
-                  <span className="text-sm font-medium text-slate-700">Portfolio in a taxable account</span>
-                </label>
-                <AssetAllocationSelect value={inputs.assetAllocationPct} onChange={(v) => update('assetAllocationPct', v)} />
-              </>
-            )}
-            {section.fields.map(renderField)}
-          </div>
-        </details>
-      ))}
+      <details className={cardClass} open>
+        <summary className={sectionSummaryClass}>Buy</summary>
+        <div className={gridClass}>
+          {plain(BUY_PLAIN.purchasePrice)}
+          {toggle(BUY_TOGGLES.downPayment)}
+          {plain(BUY_PLAIN.interestRatePct)}
+          {plain(BUY_PLAIN.amortizationYears)}
+          {toggle(BUY_TOGGLES.purchaseCosts)}
+          {toggle(BUY_TOGGLES.sellingCosts)}
+          {toggle(BUY_TOGGLES.propertyTax)}
+          {toggle(BUY_TOGGLES.maintenance)}
+          {toggle(BUY_TOGGLES.homeInsurance)}
+          {plain(BUY_PLAIN.otherHomeCostsMonthly)}
+          {plain(BUY_PLAIN.realEstateGrowthRatePct)}
+        </div>
+      </details>
+
+      <details className={cardClass} open>
+        <summary className={sectionSummaryClass}>Rent</summary>
+        <div className={gridClass}>{RENT_FIELDS.map(plain)}</div>
+      </details>
+
+      <details className={cardClass} open>
+        <summary className={sectionSummaryClass}>Expected Returns</summary>
+        <p className="mt-3 text-xs text-slate-500">
+          Annual return split by tax type (% of portfolio). Derived from your asset allocation, but editable. In NZ the
+          capital-gains rows are not taxed.
+        </p>
+        <div className={gridClass}>
+          <label className="flex cursor-pointer items-center gap-2 self-end pb-1.5">
+            <input
+              type="checkbox"
+              checked={inputs.isPortfolioTaxable}
+              onChange={(e) => update('isPortfolioTaxable', e.target.checked)}
+              className="h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
+            />
+            <span className="text-sm font-medium text-slate-700">Portfolio in a taxable account</span>
+          </label>
+          <AssetAllocationSelect value={inputs.assetAllocationPct} onChange={(v) => update('assetAllocationPct', v)} />
+          {RETURN_FIELDS.map(plain)}
+        </div>
+      </details>
     </div>
   )
 }
@@ -213,7 +243,7 @@ function AssetAllocationSelect({ value, onChange }: { value: number; onChange: (
       <select
         value={String(value)}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="mt-1 w-full rounded-md border border-slate-300 bg-white px-2 py-2.5 text-sm text-slate-900 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
+        className="mt-1 w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-900 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
       >
         {options.map((n) => (
           <option key={n} value={String(n)}>

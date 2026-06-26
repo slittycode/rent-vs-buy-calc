@@ -53,8 +53,9 @@ export default function NetWorthChart({ result, mortgagePaidOffYear }: Props) {
         </ResponsiveContainer>
       </div>
       <p className="mt-2 text-xs text-slate-500">
-        Net worth assumes you cash out that year: the buyer sells and clears the mortgage, while the renter liquidates
-        the portfolio. Selling costs and NZ exit tax are not modelled.
+        Net worth assumes you cash out that year: the buyer sells (net of selling costs) and clears the mortgage, while
+        the renter liquidates the portfolio. NZ has no exit/capital-gains tax in this model, so the portfolio is already
+        after-tax.
       </p>
     </>
   )

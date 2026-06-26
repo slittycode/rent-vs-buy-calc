@@ -17,11 +17,11 @@ describe('URL input decoding', () => {
 
   it('clamps out-of-range numeric query values to the same limits as the UI', () => {
     const decoded = decodeInputs(
-      '?timeHorizonYears=999&downPaymentPct=-10&assetAllocationPct=120&foreignWithholdingTaxPct=300',
+      '?timeHorizonYears=999&downPayment=-10&assetAllocationPct=120&foreignWithholdingTaxPct=300',
     )
 
     expect(decoded.timeHorizonYears).toBe(50)
-    expect(decoded.downPaymentPct).toBe(0)
+    expect(decoded.downPayment).toBe(0)
     expect(decoded.assetAllocationPct).toBe(100)
     expect(decoded.foreignWithholdingTaxPct).toBe(100)
   })
@@ -31,39 +31,25 @@ describe('URL input decoding', () => {
     expect(decodeInputs('?isPortfolioTaxable=false').isPortfolioTaxable).toBe(false)
   })
 
-  it('round-trips the cost-mode flags and fixed $ amounts through encode/decode', () => {
-    const scenario = {
-      ...NZ_DEFAULTS,
-      propertyTaxIsFixed: true,
-      propertyTaxAnnualFixed: 2900,
-      maintenanceIsFixed: true,
-      maintenanceAnnualFixed: 6000,
-    }
-    const decoded = decodeInputs('?' + encodeInputs(scenario))
-
-    expect(decoded.propertyTaxIsFixed).toBe(true)
-    expect(decoded.propertyTaxAnnualFixed).toBe(2900)
-    expect(decoded.maintenanceIsFixed).toBe(true)
-    expect(decoded.maintenanceAnnualFixed).toBe(6000)
+  it('decodes valid expense-mode toggles and ignores invalid ones', () => {
+    const decoded = decodeInputs('?downPaymentMode=dollar&maintenanceMode=banana')
+    expect(decoded.downPaymentMode).toBe('dollar')
+    expect(decoded.maintenanceMode).toBe(NZ_DEFAULTS.maintenanceMode)
   })
 
-  it('falls back for an invalid cost-mode flag', () => {
-    expect(decodeInputs('?maintenanceIsFixed=sometimes').maintenanceIsFixed).toBe(NZ_DEFAULTS.maintenanceIsFixed)
-  })
-
-  it('round-trips the transaction-cost mode flags and fixed $ amounts', () => {
+  it('round-trips every field through encode → decode', () => {
     const scenario = {
       ...NZ_DEFAULTS,
-      purchaseCostsIsFixed: true,
-      purchaseCostsFixed: 5500,
-      sellingCostsIsFixed: true,
-      sellingCostsFixed: 28000,
+      downPayment: 150_000,
+      downPaymentMode: 'dollar' as const,
+      maintenance: 9_000,
+      maintenanceMode: 'dollar' as const,
+      sellingCosts: 4.5,
+      rentGrowthPct: 4,
+      investmentFeePct: 0.5,
+      otherHomeCostsMonthly: 120,
     }
     const decoded = decodeInputs('?' + encodeInputs(scenario))
-
-    expect(decoded.purchaseCostsIsFixed).toBe(true)
-    expect(decoded.purchaseCostsFixed).toBe(5500)
-    expect(decoded.sellingCostsIsFixed).toBe(true)
-    expect(decoded.sellingCostsFixed).toBe(28000)
+    expect(decoded).toEqual(scenario)
   })
 })
