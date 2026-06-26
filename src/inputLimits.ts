@@ -1,6 +1,7 @@
 import type { Inputs } from './types'
 
 export type NumericInputKey = { [K in keyof Inputs]: Inputs[K] extends number ? K : never }[keyof Inputs]
+export type BooleanInputKey = { [K in keyof Inputs]: Inputs[K] extends boolean ? K : never }[keyof Inputs]
 
 export interface NumericInputLimit {
   min?: number
@@ -22,6 +23,10 @@ export const NUMERIC_INPUT_LIMITS: Record<NumericInputKey, NumericInputLimit> = 
   downPayment: { min: 0 },
   amortizationYears: { min: 1, max: 40 },
   interestRatePct: { min: 0 },
+  propertyTaxRatePct: { min: 0 },
+  propertyTaxAnnualFixed: { min: 0 },
+  maintenanceCostPct: { min: 0 },
+  maintenanceAnnualFixed: { min: 0 },
   purchaseCosts: { min: 0 },
   sellingCosts: { min: 0 },
 

@@ -157,6 +157,88 @@ describe('simulation — structure', () => {
     expect(y1.renterAnnualCost).toBeCloseTo(r.firstMonth.renterTotal * 12, 2)
   })
 
+  it('uses fixed annual council rates and maintenance in the first month when enabled', () => {
+    const r = simulate({
+      ...NZ_DEFAULTS,
+      propertyTaxIsFixed: true,
+      propertyTaxAnnualFixed: 3600,
+      maintenanceIsFixed: true,
+      maintenanceAnnualFixed: 6000,
+    })
+
+    expect(r.firstMonth.propertyTax).toBeCloseTo(300, 5)
+    expect(r.firstMonth.maintenance).toBeCloseTo(500, 5)
+  })
+
+  it('keeps percentage council rates distinct from fixed annual council rates', () => {
+    const fixed = simulate({
+      ...NZ_DEFAULTS,
+      purchasePrice: 600_000,
+      propertyTaxRatePct: 1,
+      propertyTaxIsFixed: true,
+      propertyTaxAnnualFixed: 3600,
+    })
+    const percentage = simulate({
+      ...NZ_DEFAULTS,
+      purchasePrice: 600_000,
+      propertyTaxRatePct: 1,
+      propertyTaxIsFixed: false,
+      propertyTaxAnnualFixed: 3600,
+    })
+
+    expect(fixed.firstMonth.propertyTax).toBeCloseTo(300, 5)
+    expect(percentage.firstMonth.propertyTax).toBeCloseTo(500, 5)
+  })
+
+  it('escalates fixed annual council rates with inflation', () => {
+    const r = simulate({
+      ...NZ_DEFAULTS,
+      timeHorizonYears: 2,
+      purchasePrice: 100_000,
+      downPaymentPct: 100,
+      propertyTaxIsFixed: true,
+      propertyTaxAnnualFixed: 1200,
+      maintenanceCostPct: 0,
+      maintenanceIsFixed: true,
+      maintenanceAnnualFixed: 0,
+      homeInsuranceMonthly: 0,
+      rentMonthly: 0,
+      rentInsuranceMonthly: 0,
+      inflationPct: 10,
+      realEstateGrowthRatePct: 0,
+    })
+    const year1 = r.series[1].buyerAnnualCost
+    const year2 = r.series[2].buyerAnnualCost
+
+    expect(year2 - year1).toBeCloseTo(year1 * 0.1, 2)
+  })
+
+  it('higher fixed annual owner costs increase buyer costs and reduce buyer net worth when buying is cheaper', () => {
+    const lowCosts = simulate({
+      ...NZ_DEFAULTS,
+      timeHorizonYears: 1,
+      rentMonthly: 10_000,
+      rentInsuranceMonthly: 0,
+      propertyTaxIsFixed: true,
+      propertyTaxAnnualFixed: 1200,
+      maintenanceIsFixed: true,
+      maintenanceAnnualFixed: 1200,
+    })
+    const highCosts = simulate({
+      ...NZ_DEFAULTS,
+      timeHorizonYears: 1,
+      rentMonthly: 10_000,
+      rentInsuranceMonthly: 0,
+      propertyTaxIsFixed: true,
+      propertyTaxAnnualFixed: 7200,
+      maintenanceIsFixed: true,
+      maintenanceAnnualFixed: 7200,
+    })
+
+    expect(highCosts.series[1].buyerAnnualCost).toBeGreaterThan(lowCosts.series[1].buyerAnnualCost)
+    expect(highCosts.finalBuyerNetWorth).toBeLessThan(lowCosts.finalBuyerNetWorth)
+  })
+
   it('reports renter annual savings as buyer cost minus renter cost', () => {
     const y1 = simulate(NZ_DEFAULTS).series[1]
     expect(y1.renterAnnualSavings).toBeCloseTo(y1.buyerAnnualCost - y1.renterAnnualCost, 2)

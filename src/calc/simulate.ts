@@ -105,6 +105,10 @@ function project(inputs: Inputs): Projection {
   let balance = loanAmount
   let homeValue = inputs.purchasePrice
   let rent = inputs.rentMonthly
+  let homeIns = inputs.homeInsuranceMonthly
+  let rentIns = inputs.rentInsuranceMonthly
+  let propTaxFixedM = inputs.propertyTaxAnnualFixed / 12
+  let maintFixedM = inputs.maintenanceAnnualFixed / 12
   let inflationIndex = 1 // escalates fixed-dollar costs by inflation over time
 
   let renterPortfolio = deposit + purchaseCostsAmount // renter invests the buyer's upfront cash
@@ -152,6 +156,14 @@ function project(inputs: Inputs): Projection {
       if (balance < 0.005) balance = 0
     }
 
+    const propertyTax = inputs.propertyTaxIsFixed
+      ? propTaxFixedM
+      : (homeValue * (inputs.propertyTaxRatePct / 100)) / 12
+    const maintenance = inputs.maintenanceIsFixed
+      ? maintFixedM
+      : (homeValue * (inputs.maintenanceCostPct / 100)) / 12
+    const buyerCost = mortgageOutflow + propertyTax + maintenance + homeIns
+    const renterCost = rent + rentIns
     const propertyTax = ptPct
       ? (homeValue * (inputs.propertyTax / 100)) / 12
       : (inputs.propertyTax * inflationIndex) / 12
@@ -192,6 +204,11 @@ function project(inputs: Inputs): Projection {
 
     // Escalate costs and grow the home for next month.
     homeValue *= 1 + houseGrowthM
+    rent *= 1 + inflM
+    homeIns *= 1 + inflM
+    rentIns *= 1 + inflM
+    propTaxFixedM *= 1 + inflM
+    maintFixedM *= 1 + inflM
     rent *= 1 + rentGrowthM
     inflationIndex *= 1 + inflM
 
