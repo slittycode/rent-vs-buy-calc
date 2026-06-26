@@ -1,5 +1,5 @@
 import type { Inputs, Location } from '../types'
-import { LOCATIONS } from '../types'
+import { LOCATIONS, EXPENSE_MODES } from '../types'
 import { NZ_DEFAULTS } from '../defaults'
 import { presetForLocation } from '../regions'
 import { clampNumericInput, type NumericInputKey } from '../inputLimits'
@@ -12,6 +12,10 @@ export function encodeInputs(inputs: Inputs): string {
   }
   return params.toString()
 }
+
+const isLocation = (raw: string): raw is Inputs['location'] => (LOCATIONS as readonly string[]).includes(raw)
+const isExpenseMode = (raw: string): raw is Inputs['downPaymentMode'] =>
+  (EXPENSE_MODES as readonly string[]).includes(raw)
 
 /** Decode inputs from a query string, falling back to NZ defaults for anything missing or invalid. */
 export function decodeInputs(search: string): Inputs {
@@ -32,8 +36,12 @@ export function decodeInputs(search: string): Inputs {
       if (Number.isFinite(n)) (result[key] as number) = clampNumericInput(key as NumericInputKey, n)
     } else if (typeof def === 'boolean') {
       if (raw === 'true' || raw === 'false') (result[key] as boolean) = raw === 'true'
+    } else if (def === 'pct' || def === 'dollar') {
+      // A toggleable-expense mode field.
+      if (isExpenseMode(raw)) (result[key] as Inputs['downPaymentMode']) = raw
     } else {
-      if (LOCATIONS.includes(raw as Inputs['location'])) (result[key] as string) = raw
+      // The location string field.
+      if (isLocation(raw)) (result[key] as Inputs['location']) = raw
     }
   }
   return result
