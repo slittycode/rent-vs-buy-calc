@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
-import type { Inputs } from './types'
+import type { Inputs, Location } from './types'
 import { NZ_DEFAULTS } from './defaults'
 import { simulate } from './calc/simulate'
 import { marginalRate } from './calc/tax'
 import { compositionForAllocation } from './calc/portfolio'
+import { presetForLocation } from './regions'
 import { decodeInputs, encodeInputs } from './state/urlState'
 import InputsPanel from './components/InputsPanel'
 import ResultsSummary, { BreakEvenSummary } from './components/ResultsSummary'
@@ -31,6 +32,10 @@ export default function App() {
       // Changing the asset allocation resets the return-composition fields to match.
       if (key === 'assetAllocationPct') {
         return { ...prev, assetAllocationPct: value as number, ...compositionForAllocation(value as number) }
+      }
+      // Changing location fills the market-specific fields with that region's data.
+      if (key === 'location') {
+        return { ...prev, location: value as Location, ...presetForLocation(value as Location) }
       }
       return { ...prev, [key]: value }
     })

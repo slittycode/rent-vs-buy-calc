@@ -106,6 +106,9 @@ export default function InputsPanel({ inputs, update }: Props) {
                 </option>
               ))}
             </select>
+            <span className="mt-1 block text-xs text-slate-500">
+              Fills price, rent, rates, insurance &amp; growth with that market's data — all still editable.
+            </span>
           </label>
           {TOP_FIELDS.map(renderField)}
         </div>

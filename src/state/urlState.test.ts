@@ -1,11 +1,30 @@
 import { describe, expect, it } from 'vitest'
 import { NZ_DEFAULTS } from '../defaults'
+import { REGION_PRESETS } from '../regions'
 import { decodeInputs } from './urlState'
 
 describe('URL input decoding', () => {
   it('falls back to New Zealand for invalid location values', () => {
     expect(decodeInputs('?location=Ontario').location).toBe('New Zealand')
     expect(decodeInputs('?location=New+Zealand').location).toBe('New Zealand')
+  })
+
+  it('seeds market fields from the location preset', () => {
+    const decoded = decodeInputs('?location=Auckland')
+
+    expect(decoded.location).toBe('Auckland')
+    expect(decoded.purchasePrice).toBe(REGION_PRESETS.Auckland.purchasePrice)
+    expect(decoded.rentMonthly).toBe(REGION_PRESETS.Auckland.rentMonthly)
+    expect(decoded.propertyTaxRatePct).toBe(REGION_PRESETS.Auckland.propertyTaxRatePct)
+  })
+
+  it('lets an explicit param override the location preset', () => {
+    const decoded = decodeInputs('?location=Auckland&purchasePrice=2000000')
+
+    expect(decoded.location).toBe('Auckland')
+    expect(decoded.purchasePrice).toBe(2_000_000)
+    // Untouched fields still come from the Auckland preset.
+    expect(decoded.rentMonthly).toBe(REGION_PRESETS.Auckland.rentMonthly)
   })
 
   it('falls back to defaults for invalid numeric query values', () => {

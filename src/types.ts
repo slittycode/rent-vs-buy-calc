@@ -1,11 +1,33 @@
 /**
  * Inputs mirror the PWL Capital rent-vs-buy calculator field-for-field. The only
- * localisation is `location` (New Zealand), which drives NZ income-tax brackets.
+ * localisation is `location`: a national "New Zealand" default plus the 16 REINZ
+ * regions and the Queenstown-Lakes district. Selecting one pre-fills the market-
+ * specific fields (price, rent, rates, insurance, growth) — see `regions.ts`. NZ
+ * income tax is the same nationwide, so location does not change the tax maths.
  * Percentages are whole numbers (5.5 = 5.5%);
  * dollar amounts are NZD.
  */
 
-export const LOCATIONS = ['New Zealand'] as const
+export const LOCATIONS = [
+  'New Zealand',
+  'Northland',
+  'Auckland',
+  'Waikato',
+  'Bay of Plenty',
+  'Gisborne',
+  "Hawke's Bay",
+  'Taranaki',
+  'Manawatū-Whanganui',
+  'Wellington',
+  'Tasman',
+  'Nelson',
+  'Marlborough',
+  'West Coast',
+  'Canterbury',
+  'Otago',
+  'Queenstown-Lakes',
+  'Southland',
+] as const
 export type Location = (typeof LOCATIONS)[number]
 
 export interface Inputs {
