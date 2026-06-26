@@ -1,6 +1,6 @@
 /**
- * Inputs mirror the PWL Capital rent-vs-buy calculator field-for-field. The only
- * localisation is `location` (New Zealand), which drives NZ income-tax brackets.
+ * Inputs keep the PWL Capital rent-vs-buy shape as the base, then add NZ-focused
+ * transaction-cost and fixed-dollar owner-cost controls.
  *
  * Percentages are whole numbers (5.5 = 5.5%); dollar amounts are NZD.
  *
@@ -34,12 +34,6 @@ export interface Inputs {
   downPaymentMode: ExpenseMode
   amortizationYears: number
   interestRatePct: number
-  propertyTaxRatePct: number // annual, % of property value (NZ: council rates)
-  propertyTaxIsFixed: boolean
-  propertyTaxAnnualFixed: number
-  maintenanceCostPct: number // annual, % of property value
-  maintenanceIsFixed: boolean
-  maintenanceAnnualFixed: number
   purchaseCosts: number // one-time upfront buying costs (legal, LIM, building report); % of price or $
   purchaseCostsMode: ExpenseMode
   sellingCosts: number // one-time costs at sale (agent commission, legal); % of sale value or $

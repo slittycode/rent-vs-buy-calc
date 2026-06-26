@@ -25,3 +25,9 @@ export function formatNZDCompact(value: number): string {
 export function formatPct(fraction: number, decimals = 1): string {
   return `${fraction.toFixed(decimals)}%`
 }
+
+/** "1 year", "1.5 years", or "0.08 years". */
+export function formatYears(years: number): string {
+  const rounded = Number(years.toFixed(2))
+  return `${rounded} ${rounded === 1 ? 'year' : 'years'}`
+}

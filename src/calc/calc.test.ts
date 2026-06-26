@@ -75,9 +75,38 @@ describe('asset allocation → return composition', () => {
     expect(c.interestIncomePct).toBeCloseTo(0.67, 5)
   })
 
-  it('is all interest at 0% equity and no interest at 100% equity', () => {
-    expect(compositionForAllocation(0).interestIncomePct).toBeCloseTo(3.35, 5)
-    expect(compositionForAllocation(100).interestIncomePct).toBe(0)
+  it('matches PWL preset return mixes away from the default allocation', () => {
+    expect(compositionForAllocation(0)).toEqual({
+      eligibleDividendsPct: 0,
+      foreignDividendsPct: 0,
+      realizedGainsPct: 0.02,
+      unrealizedGainsPct: 0.2,
+      interestIncomePct: 3.33,
+    })
+    expect(compositionForAllocation(50)).toEqual({
+      eligibleDividendsPct: 0.39,
+      foreignDividendsPct: 0.47,
+      realizedGainsPct: 0.28,
+      unrealizedGainsPct: 2.55,
+      interestIncomePct: 1.67,
+    })
+    expect(compositionForAllocation(100)).toEqual({
+      eligibleDividendsPct: 0.74,
+      foreignDividendsPct: 0.94,
+      realizedGainsPct: 0.52,
+      unrealizedGainsPct: 4.67,
+      interestIncomePct: 0,
+    })
+  })
+
+  it('interpolates custom allocations between neighbouring PWL presets', () => {
+    expect(compositionForAllocation(52.5)).toEqual({
+      eligibleDividendsPct: 0.41,
+      foreignDividendsPct: 0.5,
+      realizedGainsPct: 0.3,
+      unrealizedGainsPct: 2.66,
+      interestIncomePct: 1.59,
+    })
   })
 })
 
@@ -142,6 +171,48 @@ describe('simulation — structure', () => {
     expect(r.series[r.series.length - 1].year).toBe(10)
   })
 
+  it('uses the requested fractional year as the final projection point', () => {
+    const r = simulate({ ...NZ_DEFAULTS, timeHorizonYears: 1.5 })
+
+    expect(r.series.map((point) => point.year)).toEqual([0, 1, 1.5])
+    expect(r.series.map((point) => point.periodMonths)).toEqual([0, 12, 6])
+    expect(r.horizonYears).toBe(1.5)
+    expect(r.finalBuyerNetWorth).toBe(r.series[r.series.length - 1].buyerNetWorth)
+    expect(r.finalRenterNetWorth).toBe(r.series[r.series.length - 1].renterNetWorth)
+  })
+
+  it('labels final partial-period cash flow by the months it actually covers', () => {
+    const r = simulate({
+      ...NZ_DEFAULTS,
+      inflationPct: 0,
+      rentGrowthPct: 0,
+      realEstateGrowthRatePct: 0,
+      timeHorizonYears: 1.5,
+    })
+
+    expect(r.series[1].periodMonths).toBe(12)
+    expect(r.series[2].periodMonths).toBe(6)
+    expect(r.series[2].buyerAnnualCost).toBeCloseTo(r.firstMonth.buyerTotal * 6, 2)
+    expect(r.series[2].renterAnnualCost).toBeCloseTo(r.firstMonth.renterTotal * 6, 2)
+  })
+
+  it('reports the effective monthly-rounded horizon used by the projection', () => {
+    const r = simulate({ ...NZ_DEFAULTS, timeHorizonYears: 1.51 })
+
+    expect(r.series[r.series.length - 1].year).toBe(1.5)
+    expect(r.horizonYears).toBe(1.5)
+  })
+
+  it('keeps a zero-year horizon at the initial net-worth comparison', () => {
+    const r = simulate({ ...NZ_DEFAULTS, timeHorizonYears: 0 })
+
+    expect(r.series.map((point) => point.year)).toEqual([0])
+    expect(r.horizonYears).toBe(0)
+    expect(r.finalBuyerNetWorth).toBe(r.series[0].buyerNetWorth)
+    expect(r.finalRenterNetWorth).toBe(r.series[0].renterNetWorth)
+    expect(r.firstMonth.buyerTotal).toBeGreaterThan(0)
+  })
+
   it('home equity equals value minus balance', () => {
     const p = simulate(NZ_DEFAULTS).series[5]
     expect(p.homeEquity).toBeCloseTo(p.homeValue - p.mortgageBalance, 2)
@@ -170,10 +241,10 @@ describe('simulation — structure', () => {
   it('uses fixed annual council rates and maintenance in the first month when enabled', () => {
     const r = simulate({
       ...NZ_DEFAULTS,
-      propertyTaxIsFixed: true,
-      propertyTaxAnnualFixed: 3600,
-      maintenanceIsFixed: true,
-      maintenanceAnnualFixed: 6000,
+      propertyTax: 3600,
+      propertyTaxMode: 'dollar',
+      maintenance: 6000,
+      maintenanceMode: 'dollar',
     })
 
     expect(r.firstMonth.propertyTax).toBeCloseTo(300, 5)
@@ -184,16 +255,14 @@ describe('simulation — structure', () => {
     const fixed = simulate({
       ...NZ_DEFAULTS,
       purchasePrice: 600_000,
-      propertyTaxRatePct: 1,
-      propertyTaxIsFixed: true,
-      propertyTaxAnnualFixed: 3600,
+      propertyTax: 3600,
+      propertyTaxMode: 'dollar',
     })
     const percentage = simulate({
       ...NZ_DEFAULTS,
       purchasePrice: 600_000,
-      propertyTaxRatePct: 1,
-      propertyTaxIsFixed: false,
-      propertyTaxAnnualFixed: 3600,
+      propertyTax: 1,
+      propertyTaxMode: 'pct',
     })
 
     expect(fixed.firstMonth.propertyTax).toBeCloseTo(300, 5)
@@ -205,15 +274,18 @@ describe('simulation — structure', () => {
       ...NZ_DEFAULTS,
       timeHorizonYears: 2,
       purchasePrice: 100_000,
-      downPaymentPct: 100,
-      propertyTaxIsFixed: true,
-      propertyTaxAnnualFixed: 1200,
-      maintenanceCostPct: 0,
-      maintenanceIsFixed: true,
-      maintenanceAnnualFixed: 0,
-      homeInsuranceMonthly: 0,
+      downPayment: 100,
+      downPaymentMode: 'pct',
+      propertyTax: 1200,
+      propertyTaxMode: 'dollar',
+      maintenance: 0,
+      maintenanceMode: 'dollar',
+      homeInsurance: 0,
+      homeInsuranceMode: 'dollar',
+      otherHomeCostsMonthly: 0,
       rentMonthly: 0,
       rentInsuranceMonthly: 0,
+      rentGrowthPct: 0,
       inflationPct: 10,
       realEstateGrowthRatePct: 0,
     })
@@ -229,20 +301,20 @@ describe('simulation — structure', () => {
       timeHorizonYears: 1,
       rentMonthly: 10_000,
       rentInsuranceMonthly: 0,
-      propertyTaxIsFixed: true,
-      propertyTaxAnnualFixed: 1200,
-      maintenanceIsFixed: true,
-      maintenanceAnnualFixed: 1200,
+      propertyTax: 1200,
+      propertyTaxMode: 'dollar',
+      maintenance: 1200,
+      maintenanceMode: 'dollar',
     })
     const highCosts = simulate({
       ...NZ_DEFAULTS,
       timeHorizonYears: 1,
       rentMonthly: 10_000,
       rentInsuranceMonthly: 0,
-      propertyTaxIsFixed: true,
-      propertyTaxAnnualFixed: 7200,
-      maintenanceIsFixed: true,
-      maintenanceAnnualFixed: 7200,
+      propertyTax: 7200,
+      propertyTaxMode: 'dollar',
+      maintenance: 7200,
+      maintenanceMode: 'dollar',
     })
 
     expect(highCosts.series[1].buyerAnnualCost).toBeGreaterThan(lowCosts.series[1].buyerAnnualCost)
@@ -254,23 +326,31 @@ describe('simulation — structure', () => {
     expect(y1.renterAnnualSavings).toBeCloseTo(y1.buyerAnnualCost - y1.renterAnnualCost, 2)
   })
 
-  it('derives the first year the mortgage is paid off from the yearly series', () => {
+  it('reports the first monthly point where the mortgage is paid off', () => {
     const paidOff = simulate({
       ...NZ_DEFAULTS,
       purchasePrice: 120_000,
       downPayment: 0,
-      amortizationYears: 1,
+      amortizationYears: 0.5,
       interestRatePct: 0,
       realEstateGrowthRatePct: 0,
-      timeHorizonYears: 2,
+      timeHorizonYears: 1,
     })
-    const withinHorizon = paidOff.series.find((p) => p.year > 0 && p.mortgageBalance === 0)?.year ?? null
-    const notWithinHorizon =
-      simulate({ ...NZ_DEFAULTS, amortizationYears: 30, timeHorizonYears: 10 }).series.find(
-        (p) => p.year > 0 && p.mortgageBalance === 0,
-      )?.year ?? null
-    expect(withinHorizon).toBe(1)
-    expect(notWithinHorizon).toBeNull()
+    const notWithinHorizon = simulate({ ...NZ_DEFAULTS, amortizationYears: 30, timeHorizonYears: 10 })
+
+    expect(paidOff.mortgagePaidOffYear).toBeCloseTo(0.5, 8)
+    expect(notWithinHorizon.mortgagePaidOffYear).toBeNull()
+  })
+
+  it('does not report a mortgage payoff marker when there is no mortgage', () => {
+    const cashPurchase = simulate({
+      ...NZ_DEFAULTS,
+      downPayment: 100,
+      downPaymentMode: 'pct',
+    })
+
+    expect(cashPurchase.loanAmount).toBe(0)
+    expect(cashPurchase.mortgagePaidOffYear).toBeNull()
   })
 })
 
@@ -379,6 +459,51 @@ describe('simulation — headline outcomes', () => {
     expect(r.buyingWins).toBe(false)
     expect(r.difference).toBeLessThan(0)
   })
+
+  it('reports the first monthly point where buying catches renting', () => {
+    const r = simulate({
+      ...NZ_DEFAULTS,
+      timeHorizonYears: 1,
+      purchasePrice: 120_000,
+      downPayment: 100,
+      downPaymentMode: 'pct',
+      interestRatePct: 0,
+      purchaseCosts: 0,
+      sellingCosts: 1,
+      propertyTax: 0,
+      propertyTaxMode: 'pct',
+      maintenance: 0,
+      maintenanceMode: 'pct',
+      homeInsurance: 0,
+      homeInsuranceMode: 'dollar',
+      otherHomeCostsMonthly: 0,
+      rentMonthly: 2000,
+      rentInsuranceMonthly: 0,
+      rentGrowthPct: 0,
+      inflationPct: 0,
+      realEstateGrowthRatePct: 0,
+      investmentFeePct: 0,
+      eligibleDividendsPct: 0,
+      foreignDividendsPct: 0,
+      unrealizedGainsPct: 0,
+      realizedGainsPct: 0,
+      interestIncomePct: 0,
+    })
+
+    expect(r.series[0].buyerNetWorth).toBeLessThan(r.series[0].renterNetWorth)
+    expect(r.crossoverYear).toBeCloseTo(1 / 12, 8)
+  })
+
+  it('reports immediate break-even when buying starts level with renting', () => {
+    const r = simulate({
+      ...NZ_DEFAULTS,
+      purchaseCosts: 0,
+      sellingCosts: 0,
+    })
+
+    expect(r.series[0].buyerNetWorth).toBeCloseTo(r.series[0].renterNetWorth, 2)
+    expect(r.crossoverYear).toBe(0)
+  })
 })
 
 describe('simulation — break-even rent', () => {
@@ -427,6 +552,36 @@ describe('simulation — break-even rent', () => {
 })
 
 describe('simulation — robustness across extreme inputs', () => {
+  it('keeps projections finite when growth-style rates are below -100%', () => {
+    const r = simulate({
+      ...NZ_DEFAULTS,
+      timeHorizonYears: 2,
+      inflationPct: -150,
+      rentGrowthPct: -150,
+      realEstateGrowthRatePct: -150,
+    })
+    const numericValues = [
+      r.finalBuyerNetWorth,
+      r.finalRenterNetWorth,
+      r.difference,
+      r.firstMonth.buyerTotal,
+      ...r.series.flatMap((point) => [
+        point.homeValue,
+        point.mortgageBalance,
+        point.homeEquity,
+        point.sellingCost,
+        point.buyerPortfolio,
+        point.buyerNetWorth,
+        point.renterNetWorth,
+        point.buyerAnnualCost,
+        point.renterAnnualCost,
+        point.renterAnnualSavings,
+      ]),
+    ]
+
+    expect(numericValues.every(Number.isFinite)).toBe(true)
+  })
+
   it('never produces NaN net worth, even with extreme rates', () => {
     const cases: Partial<Inputs>[] = [
       { purchasePrice: 0 },
@@ -447,6 +602,137 @@ describe('simulation — robustness across extreme inputs', () => {
         expect(Number.isFinite(p.renterNetWorth)).toBe(true)
       }
       expect(Number.isFinite(r.difference)).toBe(true)
+    }
+  })
+
+  it('keeps projections finite and period-labelled across UI boundary scenarios', () => {
+    const scenarios: Inputs[] = [
+      {
+        ...NZ_DEFAULTS,
+        timeHorizonYears: 0,
+        annualIncome: 0,
+        purchasePrice: 0,
+        downPayment: 0,
+        downPaymentMode: 'pct',
+        amortizationYears: 1,
+        interestRatePct: 0,
+        purchaseCosts: 0,
+        sellingCosts: 0,
+        propertyTax: 0,
+        propertyTaxMode: 'pct',
+        maintenance: 0,
+        maintenanceMode: 'pct',
+        homeInsurance: 0,
+        homeInsuranceMode: 'dollar',
+        otherHomeCostsMonthly: 0,
+        realEstateGrowthRatePct: -100,
+        rentMonthly: 0,
+        rentInsuranceMonthly: 0,
+        rentGrowthPct: -100,
+        assetAllocationPct: 0,
+        inflationPct: -100,
+        investmentFeePct: 0,
+        eligibleDividendsPct: 0,
+        foreignDividendsPct: 0,
+        unrealizedGainsPct: 0,
+        realizedGainsPct: 0,
+        interestIncomePct: 0,
+        foreignWithholdingTaxPct: 0,
+      },
+      {
+        ...NZ_DEFAULTS,
+        timeHorizonYears: 100,
+        annualIncome: 1_000_000,
+        purchasePrice: 5_000_000,
+        downPayment: 0,
+        downPaymentMode: 'pct',
+        amortizationYears: 40,
+        interestRatePct: 10,
+        purchaseCosts: 100,
+        purchaseCostsMode: 'pct',
+        sellingCosts: 100,
+        sellingCostsMode: 'pct',
+        propertyTax: 10,
+        propertyTaxMode: 'pct',
+        maintenance: 10,
+        maintenanceMode: 'pct',
+        homeInsurance: 10_000,
+        homeInsuranceMode: 'dollar',
+        otherHomeCostsMonthly: 10_000,
+        realEstateGrowthRatePct: 10,
+        rentMonthly: 10_000,
+        rentInsuranceMonthly: 10_000,
+        rentGrowthPct: 10,
+        assetAllocationPct: 100,
+        inflationPct: 10,
+        investmentFeePct: 100,
+        eligibleDividendsPct: 10,
+        foreignDividendsPct: 10,
+        unrealizedGainsPct: 10,
+        realizedGainsPct: 10,
+        interestIncomePct: 10,
+        foreignWithholdingTaxPct: 100,
+      },
+      {
+        ...NZ_DEFAULTS,
+        timeHorizonYears: 1.5,
+        purchasePrice: 5_000_000,
+        downPayment: 100,
+        downPaymentMode: 'pct',
+        amortizationYears: 1,
+        propertyTax: 1_000_000,
+        propertyTaxMode: 'dollar',
+        maintenance: 1_000_000,
+        maintenanceMode: 'dollar',
+        rentMonthly: 10_000,
+        inflationPct: 10,
+      },
+    ]
+
+    for (const scenario of scenarios) {
+      const r = simulate(scenario)
+      const numericValues = [
+        r.horizonYears,
+        r.finalBuyerNetWorth,
+        r.finalRenterNetWorth,
+        r.difference,
+        r.afterTaxReturnPct,
+        r.loanAmount,
+        r.deposit,
+        r.purchaseCostsAmount,
+        r.sellingCostsAtHorizon,
+        r.monthlyPaymentPI,
+        r.firstMonth.mortgagePayment,
+        r.firstMonth.propertyTax,
+        r.firstMonth.maintenance,
+        r.firstMonth.homeInsurance,
+        r.firstMonth.otherHomeCosts,
+        r.firstMonth.buyerTotal,
+        r.firstMonth.rent,
+        r.firstMonth.rentInsurance,
+        r.firstMonth.renterTotal,
+        ...r.series.flatMap((point) => [
+          point.year,
+          point.periodMonths,
+          point.homeValue,
+          point.mortgageBalance,
+          point.homeEquity,
+          point.sellingCost,
+          point.buyerPortfolio,
+          point.buyerNetWorth,
+          point.renterNetWorth,
+          point.buyerAnnualCost,
+          point.renterAnnualCost,
+          point.renterAnnualSavings,
+        ]),
+      ]
+
+      expect(numericValues.every(Number.isFinite)).toBe(true)
+      expect(r.series.reduce((total, point) => total + point.periodMonths, 0)).toBe(
+        Math.round(scenario.timeHorizonYears * 12),
+      )
+      expect(r.series[0].periodMonths).toBe(0)
+      expect(r.series.slice(1).every((point) => point.periodMonths > 0 && point.periodMonths <= 12)).toBe(true)
     }
   })
 })
