@@ -27,7 +27,11 @@ export const NZ_DEFAULTS: Inputs = {
   realEstateGrowthRatePct: 3.5,
   homeInsuranceMonthly: 250,
   purchaseCostsPct: 0.5,
+  purchaseCostsIsFixed: false,
+  purchaseCostsFixed: 4_250, // ≈ 0.5% of the $850k default price, so toggling is seamless
   sellingCostsPct: 3.0,
+  sellingCostsIsFixed: false,
+  sellingCostsFixed: 25_500, // ≈ 3.0% of the $850k default price (commission-dominated)
 
   rentInsuranceMonthly: 30,
   rentMonthly: Math.round((DEFAULT_PRICE * 0.04) / 12),

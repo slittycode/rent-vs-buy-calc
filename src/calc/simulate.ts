@@ -57,10 +57,13 @@ export function simulate(inputs: Inputs): SimulationResult {
   const payment = monthlyMortgagePayment(loanAmount, inputs.interestRatePct, inputs.amortizationYears)
   const mRate = inputs.interestRatePct / 100 / 12
 
-  // One-off transaction costs. Buying costs are paid up front; the renter invests that
-  // cash instead. Selling costs are a % of the sale value, netted out of the buyer's net
-  // worth at every snapshot ("net worth if the home were sold today").
-  const purchaseCosts = inputs.purchasePrice * (inputs.purchaseCostsPct / 100)
+  // One-off transaction costs. Buying costs are paid up front and the renter invests that cash
+  // instead; they can be a % of price or a fixed $. Selling costs are netted out of the buyer's
+  // net worth at every snapshot ("net worth if sold today") — a % of the sale value, or a fixed
+  // $ in today's dollars grown to the sale year.
+  const purchaseCosts = inputs.purchaseCostsIsFixed
+    ? inputs.purchaseCostsFixed
+    : inputs.purchasePrice * (inputs.purchaseCostsPct / 100)
   const sellFrac = inputs.sellingCostsPct / 100
 
   const afterTaxAnnual = afterTaxPortfolioReturn(inputs)
@@ -78,15 +81,19 @@ export function simulate(inputs: Inputs): SimulationResult {
   // the annual amount / 12 and escalate with inflation each month, mirroring insurance and rent.
   let propTaxFixedM = inputs.propertyTaxAnnualFixed / 12
   let maintFixedM = inputs.maintenanceAnnualFixed / 12
+  // Fixed-dollar selling cost (when chosen instead of % of sale value): today's dollars, grown to
+  // the sale year by inflation, deducted from the home in buyerNetWorth at each snapshot.
+  let sellFixedNow = inputs.sellingCostsFixed
 
   // Renter invests the cash the buyer ties up up front: the deposit plus buying costs.
   let renterPortfolio = deposit + purchaseCosts
   let buyerPortfolio = 0
 
-  // Buyer's realisable net worth: home value less selling costs, less the mortgage, plus
-  // any side investments. Selling costs apply to the home only (the portfolio has no NZ
-  // exit/CGT). homeEquity below stays gross (value − balance) for transparency.
-  const buyerNetWorth = () => homeValue * (1 - sellFrac) - balance + buyerPortfolio
+  // Buyer's realisable net worth: home value less selling costs, less the mortgage, plus any
+  // side investments. Selling costs apply to the home only (the portfolio has no NZ exit/CGT).
+  // homeEquity below stays gross (value − balance) for transparency.
+  const sellingCostNow = () => (inputs.sellingCostsIsFixed ? sellFixedNow : homeValue * sellFrac)
+  const buyerNetWorth = () => homeValue - sellingCostNow() - balance + buyerPortfolio
 
   const series: YearPoint[] = [
     {
@@ -157,6 +164,7 @@ export function simulate(inputs: Inputs): SimulationResult {
     rentIns *= 1 + inflM
     propTaxFixedM *= 1 + inflM
     maintFixedM *= 1 + inflM
+    sellFixedNow *= 1 + inflM
 
     if (m % 12 === 0) {
       series.push({
@@ -190,6 +198,6 @@ export function simulate(inputs: Inputs): SimulationResult {
     firstMonth: firstMonth!,
     loanAmount,
     purchaseCosts,
-    sellingCostsAtHorizon: last.homeValue * sellFrac,
+    sellingCostsAtHorizon: inputs.sellingCostsIsFixed ? sellFixedNow : last.homeValue * sellFrac,
   }
 }

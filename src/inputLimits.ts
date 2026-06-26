@@ -24,7 +24,9 @@ export const NUMERIC_INPUT_LIMITS: Record<NumericInputKey, NumericInputLimit> = 
   realEstateGrowthRatePct: {},
   homeInsuranceMonthly: { min: 0 },
   purchaseCostsPct: { min: 0, max: 100 },
+  purchaseCostsFixed: { min: 0 },
   sellingCostsPct: { min: 0, max: 100 },
+  sellingCostsFixed: { min: 0 },
 
   rentInsuranceMonthly: { min: 0 },
   rentMonthly: { min: 0 },

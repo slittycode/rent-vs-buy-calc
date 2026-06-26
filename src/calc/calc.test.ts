@@ -264,3 +264,35 @@ describe('fixed-dollar council rates / maintenance', () => {
     expect(dearer.difference).toBeLessThan(base.difference)
   })
 })
+
+describe('fixed-dollar transaction costs (purchase / selling)', () => {
+  const deposit = NZ_DEFAULTS.purchasePrice * (NZ_DEFAULTS.downPaymentPct / 100)
+
+  it('uses a fixed $ purchase cost up front, which the renter invests', () => {
+    const r = simulate({ ...NZ_DEFAULTS, purchaseCostsIsFixed: true, purchaseCostsFixed: 5000 })
+    expect(r.purchaseCosts).toBe(5000)
+    expect(r.series[0].renterNetWorth).toBeCloseTo(deposit + 5000, 2)
+  })
+
+  it('a fixed $ purchase cost does not scale with the purchase price', () => {
+    const cheap = simulate({ ...NZ_DEFAULTS, purchaseCostsIsFixed: true, purchaseCostsFixed: 5000, purchasePrice: 500_000 })
+    const dear = simulate({ ...NZ_DEFAULTS, purchaseCostsIsFixed: true, purchaseCostsFixed: 5000, purchasePrice: 1_000_000 })
+    expect(cheap.purchaseCosts).toBe(5000)
+    expect(dear.purchaseCosts).toBe(5000)
+  })
+
+  it('uses a fixed $ selling cost, grown to the sale year by inflation', () => {
+    const sellFixed = 10_000
+    const years = NZ_DEFAULTS.timeHorizonYears
+    const r = simulate({ ...NZ_DEFAULTS, sellingCostsIsFixed: true, sellingCostsFixed: sellFixed })
+    expect(r.series[0].buyerNetWorth).toBeCloseTo(deposit - sellFixed, 2) // undiscounted at t=0
+    expect(r.sellingCostsAtHorizon).toBeCloseTo(sellFixed * Math.pow(1 + NZ_DEFAULTS.inflationPct / 100, years), 2)
+  })
+
+  it('a larger fixed selling cost reduces buyer net worth and advantage', () => {
+    const base = simulate({ ...NZ_DEFAULTS, sellingCostsIsFixed: true, sellingCostsFixed: 10_000 })
+    const dearer = simulate({ ...NZ_DEFAULTS, sellingCostsIsFixed: true, sellingCostsFixed: 40_000 })
+    expect(dearer.finalBuyerNetWorth).toBeLessThan(base.finalBuyerNetWorth)
+    expect(dearer.difference).toBeLessThan(base.difference)
+  })
+})
