@@ -18,7 +18,9 @@ export default function AssumptionsNote({ marginalRatePct, isPortfolioTaxable }:
           instead — so the renter starts ahead by the buying costs. Each month whichever side has the lower housing cost
           invests the surplus. Net worth is the value if you cashed out that year: home value <strong>after selling
           costs</strong> (agent commission and legal) minus the mortgage, plus any side investments, versus the
-          renter&rsquo;s portfolio. This first version assumes a main-home buyer, not an investment-property landlord.
+          renter&rsquo;s portfolio. The default is a main-home buyer (exempt from bright-line tax); untick
+          &ldquo;Main home&rdquo; to model an investment property, where a sale within 2 years is taxed on the gain at
+          your marginal rate and netted out of the buyer&rsquo;s proceeds.
         </p>
         <p>
           <strong>Costs as a rate or a fixed sum.</strong> Council rates, maintenance, insurance, the deposit and the
@@ -38,14 +40,9 @@ export default function AssumptionsNote({ marginalRatePct, isPortfolioTaxable }:
         </p>
         <p>
           <strong>Caveats.</strong> Figures are in today&rsquo;s nominal dollars, a single fixed mortgage rate is assumed
-          for the whole term, and returns are smooth averages. Council rates and maintenance can be entered as a home-value
-          percentage or a fixed yearly amount; fixed yearly amounts rise with inflation. Transaction costs are modelled
-          only as flat percentages (no fixed-fee detail). FIF rules, PIE/PIR tax treatment, dividend imputation credits,
-          and bright-line/property-sale tax are not modelled. This is a simplified tool to aid thinking, not financial
-          for the whole term, and returns are smooth averages. Buying and selling transaction costs are modelled, but FIF
-          rules, PIE/PIR tax treatment, dividend imputation credits, bright-line/property-sale tax, mortgage low-equity
-          premiums, and KiwiSaver first-home support are not. This is a simplified tool to aid thinking, not financial
-          advice.
+          for the whole term, and returns are smooth averages. Buying/selling costs and bright-line property-sale tax are
+          modelled, but FIF rules, PIE/PIR tax treatment, dividend imputation credits, mortgage low-equity premiums, and
+          KiwiSaver first-home support are not. This is a simplified tool to aid thinking, not financial advice.
         </p>
         <p>
           <strong>Sharing and privacy.</strong> The app runs in your browser. It has no backend, accounts, API keys, or

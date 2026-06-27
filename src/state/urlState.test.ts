@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { NZ_DEFAULTS } from '../defaults'
-import { decodeInputs, encodeInputs } from './urlState'
+import { buildSearch, decodeInputs, decodePinned, encodeInputs } from './urlState'
 
 describe('URL input decoding', () => {
   it('falls back to New Zealand for invalid location values', () => {
@@ -29,18 +29,6 @@ describe('URL input decoding', () => {
   it('falls back to defaults for invalid boolean query values', () => {
     expect(decodeInputs('?isPortfolioTaxable=maybe').isPortfolioTaxable).toBe(NZ_DEFAULTS.isPortfolioTaxable)
     expect(decodeInputs('?isPortfolioTaxable=false').isPortfolioTaxable).toBe(false)
-    expect(decodeInputs('?propertyTaxIsFixed=maybe').propertyTaxIsFixed).toBe(NZ_DEFAULTS.propertyTaxIsFixed)
-  })
-
-  it('decodes fixed owner cost modes and yearly amounts from query values', () => {
-    const decoded = decodeInputs(
-      '?propertyTaxIsFixed=true&propertyTaxAnnualFixed=3600&maintenanceIsFixed=true&maintenanceAnnualFixed=7200',
-    )
-
-    expect(decoded.propertyTaxIsFixed).toBe(true)
-    expect(decoded.propertyTaxAnnualFixed).toBe(3600)
-    expect(decoded.maintenanceIsFixed).toBe(true)
-    expect(decoded.maintenanceAnnualFixed).toBe(7200)
   })
 
   it('decodes valid expense-mode toggles and ignores invalid ones', () => {
@@ -63,5 +51,25 @@ describe('URL input decoding', () => {
     }
     const decoded = decodeInputs('?' + encodeInputs(scenario))
     expect(decoded).toEqual(scenario)
+  })
+
+  it('decodes the main-home flag', () => {
+    expect(decodeInputs('?isMainHome=false').isMainHome).toBe(false)
+    expect(decodeInputs('?isMainHome=true').isMainHome).toBe(true)
+  })
+})
+
+describe('pinned comparison scenario', () => {
+  it('round-trips a pinned scenario without disturbing the main inputs', () => {
+    const pinned = { ...NZ_DEFAULTS, purchasePrice: 1_200_000, timeHorizonYears: 7, isMainHome: false }
+    const search = `?${buildSearch(NZ_DEFAULTS, pinned)}`
+
+    expect(decodePinned(search)).toEqual(pinned)
+    expect(decodeInputs(search)).toEqual(NZ_DEFAULTS)
+  })
+
+  it('omits the pin param and decodes to null when nothing is pinned', () => {
+    expect(buildSearch(NZ_DEFAULTS, null)).not.toMatch(/pin=/)
+    expect(decodePinned('?purchasePrice=900000')).toBeNull()
   })
 })

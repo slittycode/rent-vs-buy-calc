@@ -10,8 +10,10 @@
  *   - Foreign dividends bear foreign withholding tax (FWT). In a taxable account
  *     it's creditable against NZ tax (so the net rate is max(marginal, FWT)); in
  *     a non-taxable account it leaks out with no offsetting domestic tax.
- *   - FIF, PIE/PIR, imputation credits, bright-line/property-sale tax, and
- *     transaction costs are out of scope for this faithful PWL-style version.
+ *   - Bright-line property-sale tax applies to a non-main-home sale within the
+ *     bright-line period (see `brightLineTaxOnSale`); the main home is exempt.
+ *   - FIF, PIE/PIR, and imputation credits remain out of scope for this
+ *     faithful PWL-style version.
  */
 
 export interface TaxBracket {
@@ -34,6 +36,28 @@ export function marginalRate(income: number): number {
     if (income <= b.upTo) return b.rate
   }
   return NZ_TAX_BRACKETS[NZ_TAX_BRACKETS.length - 1].rate
+}
+
+/**
+ * NZ bright-line period: residential property sold within this many years of
+ * purchase is taxed on the gain (as of 1 July 2024 the period is 2 years). The
+ * main home is exempt, which is the usual rent-vs-buy case.
+ */
+export const BRIGHT_LINE_PERIOD_YEARS = 2
+
+/**
+ * NZ property-sale ("bright-line") tax on a home sale. Zero for a main home, or
+ * for a sale beyond the bright-line period; otherwise the nominal gain is taxed
+ * at the seller's marginal income-tax rate.
+ */
+export function brightLineTaxOnSale(
+  gain: number,
+  annualIncome: number,
+  holdingYears: number,
+  isMainHome: boolean,
+): number {
+  if (isMainHome || holdingYears > BRIGHT_LINE_PERIOD_YEARS) return 0
+  return Math.max(gain, 0) * marginalRate(annualIncome)
 }
 
 /** Total annual income tax payable across all bands. */

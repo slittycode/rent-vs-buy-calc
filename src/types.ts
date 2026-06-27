@@ -34,16 +34,11 @@ export interface Inputs {
   downPaymentMode: ExpenseMode
   amortizationYears: number
   interestRatePct: number
-  propertyTaxRatePct: number // annual, % of property value (NZ: council rates)
-  propertyTaxIsFixed: boolean
-  propertyTaxAnnualFixed: number
-  maintenanceCostPct: number // annual, % of property value
-  maintenanceIsFixed: boolean
-  maintenanceAnnualFixed: number
   purchaseCosts: number // one-time upfront buying costs (legal, LIM, building report); % of price or $
   purchaseCostsMode: ExpenseMode
   sellingCosts: number // one-time costs at sale (agent commission, legal); % of sale value or $
   sellingCostsMode: ExpenseMode
+  isMainHome: boolean // main home is bright-line exempt; if false, NZ property-sale tax may apply on a sale within 2 years
 
   // Buying — recurring (annual unless noted)
   propertyTax: number // NZ council rates; % of home value/yr or $/yr
