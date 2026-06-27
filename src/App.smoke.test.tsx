@@ -31,6 +31,10 @@ describe('App (smoke)', () => {
     expect(screen.getAllByRole('button', { name: 'percentage' }).length).toBeGreaterThan(0)
     expect(screen.getAllByRole('button', { name: 'dollar amount' }).length).toBeGreaterThan(0)
 
+    // Bright-line tax + scenario comparison features.
+    expect(screen.getByLabelText(/Main home/i)).toBeTruthy()
+    expect(screen.getByRole('button', { name: /pin to compare/i })).toBeTruthy()
+
     const text = container.textContent ?? ''
     expect(text).not.toMatch(/Canadian province/i)
     expect(text).not.toMatch(/PWL Capital/i)
@@ -40,8 +44,9 @@ describe('App (smoke)', () => {
     expect(text).toMatch(/FIF rules/i)
     expect(text).toMatch(/PIE\/PIR tax treatment/i)
     expect(text).toMatch(/dividend imputation credits/i)
-    expect(text).toMatch(/bright-line\/property-sale tax/i)
-    expect(text).toMatch(/transaction costs are modelled/i)
+    // Bright-line is now modelled (not disclaimed away) and scoped to non-main homes.
+    expect(text).toMatch(/bright-line property-sale tax are modelled/i)
+    expect(text).toMatch(/untick .Main home. to model an investment property/i)
     expect(text).toMatch(/no backend, accounts, API keys, or stored personal data/i)
     expect(text).toMatch(/share link puts the calculator inputs in the URL/i)
   })

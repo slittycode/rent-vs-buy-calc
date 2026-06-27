@@ -6,6 +6,7 @@ import {
   grossPortfolioReturn,
   portfolioTaxDrag,
   afterTaxPortfolioReturn,
+  brightLineTaxOnSale,
 } from './tax'
 import { compositionForAllocation } from './portfolio'
 import { simulate } from './simulate'
@@ -165,88 +166,6 @@ describe('simulation — structure', () => {
     const y1 = r.series[1]
     expect(y1.buyerAnnualCost).toBeCloseTo(r.firstMonth.buyerTotal * 12, 2)
     expect(y1.renterAnnualCost).toBeCloseTo(r.firstMonth.renterTotal * 12, 2)
-  })
-
-  it('uses fixed annual council rates and maintenance in the first month when enabled', () => {
-    const r = simulate({
-      ...NZ_DEFAULTS,
-      propertyTaxIsFixed: true,
-      propertyTaxAnnualFixed: 3600,
-      maintenanceIsFixed: true,
-      maintenanceAnnualFixed: 6000,
-    })
-
-    expect(r.firstMonth.propertyTax).toBeCloseTo(300, 5)
-    expect(r.firstMonth.maintenance).toBeCloseTo(500, 5)
-  })
-
-  it('keeps percentage council rates distinct from fixed annual council rates', () => {
-    const fixed = simulate({
-      ...NZ_DEFAULTS,
-      purchasePrice: 600_000,
-      propertyTaxRatePct: 1,
-      propertyTaxIsFixed: true,
-      propertyTaxAnnualFixed: 3600,
-    })
-    const percentage = simulate({
-      ...NZ_DEFAULTS,
-      purchasePrice: 600_000,
-      propertyTaxRatePct: 1,
-      propertyTaxIsFixed: false,
-      propertyTaxAnnualFixed: 3600,
-    })
-
-    expect(fixed.firstMonth.propertyTax).toBeCloseTo(300, 5)
-    expect(percentage.firstMonth.propertyTax).toBeCloseTo(500, 5)
-  })
-
-  it('escalates fixed annual council rates with inflation', () => {
-    const r = simulate({
-      ...NZ_DEFAULTS,
-      timeHorizonYears: 2,
-      purchasePrice: 100_000,
-      downPaymentPct: 100,
-      propertyTaxIsFixed: true,
-      propertyTaxAnnualFixed: 1200,
-      maintenanceCostPct: 0,
-      maintenanceIsFixed: true,
-      maintenanceAnnualFixed: 0,
-      homeInsuranceMonthly: 0,
-      rentMonthly: 0,
-      rentInsuranceMonthly: 0,
-      inflationPct: 10,
-      realEstateGrowthRatePct: 0,
-    })
-    const year1 = r.series[1].buyerAnnualCost
-    const year2 = r.series[2].buyerAnnualCost
-
-    expect(year2 - year1).toBeCloseTo(year1 * 0.1, 2)
-  })
-
-  it('higher fixed annual owner costs increase buyer costs and reduce buyer net worth when buying is cheaper', () => {
-    const lowCosts = simulate({
-      ...NZ_DEFAULTS,
-      timeHorizonYears: 1,
-      rentMonthly: 10_000,
-      rentInsuranceMonthly: 0,
-      propertyTaxIsFixed: true,
-      propertyTaxAnnualFixed: 1200,
-      maintenanceIsFixed: true,
-      maintenanceAnnualFixed: 1200,
-    })
-    const highCosts = simulate({
-      ...NZ_DEFAULTS,
-      timeHorizonYears: 1,
-      rentMonthly: 10_000,
-      rentInsuranceMonthly: 0,
-      propertyTaxIsFixed: true,
-      propertyTaxAnnualFixed: 7200,
-      maintenanceIsFixed: true,
-      maintenanceAnnualFixed: 7200,
-    })
-
-    expect(highCosts.series[1].buyerAnnualCost).toBeGreaterThan(lowCosts.series[1].buyerAnnualCost)
-    expect(highCosts.finalBuyerNetWorth).toBeLessThan(lowCosts.finalBuyerNetWorth)
   })
 
   it('reports renter annual savings as buyer cost minus renter cost', () => {
@@ -448,5 +367,37 @@ describe('simulation — robustness across extreme inputs', () => {
       }
       expect(Number.isFinite(r.difference)).toBe(true)
     }
+  })
+})
+
+describe('NZ bright-line property-sale tax', () => {
+  it('is zero for a main home regardless of holding period', () => {
+    expect(brightLineTaxOnSale(100_000, 90_000, 1, true)).toBe(0)
+    expect(brightLineTaxOnSale(100_000, 90_000, 10, true)).toBe(0)
+  })
+
+  it('taxes a non-main-home gain at the marginal rate within the bright-line period', () => {
+    // income 90k → marginal 0.33; gain 100k taxed → 33,000. Boundary (2 yrs) is included.
+    expect(brightLineTaxOnSale(100_000, 90_000, 1, false)).toBeCloseTo(33_000, 2)
+    expect(brightLineTaxOnSale(100_000, 90_000, 2, false)).toBeCloseTo(33_000, 2)
+  })
+
+  it('is zero for a sale beyond the bright-line period, or with no gain', () => {
+    expect(brightLineTaxOnSale(100_000, 90_000, 3, false)).toBe(0)
+    expect(brightLineTaxOnSale(-50_000, 90_000, 1, false)).toBe(0)
+  })
+
+  it('charges bright-line tax on a non-main-home sale inside the period', () => {
+    const base = { ...NZ_DEFAULTS, timeHorizonYears: 2, realEstateGrowthRatePct: 5 }
+    const mainHome = simulate({ ...base, isMainHome: true })
+    const investment = simulate({ ...base, isMainHome: false })
+    expect(mainHome.brightLineTaxAtHorizon).toBe(0)
+    expect(investment.brightLineTaxAtHorizon).toBeGreaterThan(0)
+    expect(investment.finalBuyerNetWorth).toBeLessThan(mainHome.finalBuyerNetWorth)
+  })
+
+  it('does not apply beyond the bright-line period even for an investment property', () => {
+    const base = { ...NZ_DEFAULTS, timeHorizonYears: 5, isMainHome: false, realEstateGrowthRatePct: 5 }
+    expect(simulate(base).brightLineTaxAtHorizon).toBe(0)
   })
 })

@@ -64,6 +64,9 @@ export default function CostBreakdown({ result, horizon }: { result: SimulationR
             <td className="py-1 text-right tabular-nums">{formatNZD(upfront)}</td>
           </tr>
           <Row label={`Selling costs if sold in year ${horizon}`} value={result.sellingCostsAtHorizon} />
+          {result.brightLineTaxAtHorizon > 0 && (
+            <Row label={`Bright-line tax if sold in year ${horizon}`} value={result.brightLineTaxAtHorizon} />
+          )}
         </tbody>
       </table>
       <p className="mt-3 text-xs text-slate-500">

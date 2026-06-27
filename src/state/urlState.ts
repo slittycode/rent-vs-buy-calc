@@ -39,3 +39,22 @@ export function decodeInputs(search: string): Inputs {
   }
   return result
 }
+
+/**
+ * Build the full query string for a scenario, optionally embedding a pinned
+ * scenario for comparison under a single `pin` param (its own encoded inputs).
+ */
+export function buildSearch(inputs: Inputs, pinned: Inputs | null): string {
+  const qs = encodeInputs(inputs)
+  if (!pinned) return qs
+  return `${qs}&pin=${encodeURIComponent(encodeInputs(pinned))}`
+}
+
+/** Decode the pinned comparison scenario from a query string, or null if absent. */
+export function decodePinned(search: string): Inputs | null {
+  // URLSearchParams.get already percent-decodes once, undoing the encodeURIComponent
+  // used in buildSearch — so the value is a ready-to-parse inputs query string.
+  const pin = new URLSearchParams(search).get('pin')
+  if (pin === null) return null
+  return decodeInputs(`?${pin}`)
+}

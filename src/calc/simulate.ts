@@ -1,6 +1,6 @@
 import type { Inputs } from '../types'
 import { monthlyMortgagePayment } from './mortgage'
-import { afterTaxPortfolioReturn } from './tax'
+import { afterTaxPortfolioReturn, brightLineTaxOnSale } from './tax'
 import { resolveAmount } from './expenses'
 
 /** Net worth (and components) for both parties at one yearly snapshot. */
@@ -44,6 +44,7 @@ export interface SimulationResult {
   deposit: number // resolved down payment in dollars
   purchaseCostsAmount: number // resolved one-time buying costs in dollars
   sellingCostsAtHorizon: number // resolved selling cost at the final year, in dollars
+  brightLineTaxAtHorizon: number // NZ bright-line tax netted out at the horizon (0 if exempt)
   monthlyPaymentPI: number // level principal+interest payment
   breakEvenRent: number | null // monthly rent that equalises final net worth (today's $)
 }
@@ -105,10 +106,6 @@ function project(inputs: Inputs): Projection {
   let balance = loanAmount
   let homeValue = inputs.purchasePrice
   let rent = inputs.rentMonthly
-  let homeIns = inputs.homeInsuranceMonthly
-  let rentIns = inputs.rentInsuranceMonthly
-  let propTaxFixedM = inputs.propertyTaxAnnualFixed / 12
-  let maintFixedM = inputs.maintenanceAnnualFixed / 12
   let inflationIndex = 1 // escalates fixed-dollar costs by inflation over time
 
   let renterPortfolio = deposit + purchaseCostsAmount // renter invests the buyer's upfront cash
@@ -122,7 +119,14 @@ function project(inputs: Inputs): Projection {
         : inputs.sellingCosts * inflationIndex,
     )
 
-  const buyerNetWorth = () => homeValue - sellingCostAt(homeValue) - balance + buyerPortfolio
+  // Liquidation value if the buyer sold in `year`: home value less selling costs,
+  // the mortgage, and any NZ bright-line tax on the gain, plus side investments.
+  const buyerNetWorth = (year: number) =>
+    homeValue -
+    sellingCostAt(homeValue) -
+    balance -
+    brightLineTaxOnSale(homeValue - inputs.purchasePrice, inputs.annualIncome, year, inputs.isMainHome) +
+    buyerPortfolio
 
   const series: YearPoint[] = [
     {
@@ -132,7 +136,7 @@ function project(inputs: Inputs): Projection {
       homeEquity: homeValue - balance,
       sellingCost: sellingCostAt(homeValue),
       buyerPortfolio,
-      buyerNetWorth: buyerNetWorth(),
+      buyerNetWorth: buyerNetWorth(0),
       renterNetWorth: renterPortfolio,
       buyerAnnualCost: 0,
       renterAnnualCost: 0,
@@ -156,14 +160,6 @@ function project(inputs: Inputs): Projection {
       if (balance < 0.005) balance = 0
     }
 
-    const propertyTax = inputs.propertyTaxIsFixed
-      ? propTaxFixedM
-      : (homeValue * (inputs.propertyTaxRatePct / 100)) / 12
-    const maintenance = inputs.maintenanceIsFixed
-      ? maintFixedM
-      : (homeValue * (inputs.maintenanceCostPct / 100)) / 12
-    const buyerCost = mortgageOutflow + propertyTax + maintenance + homeIns
-    const renterCost = rent + rentIns
     const propertyTax = ptPct
       ? (homeValue * (inputs.propertyTax / 100)) / 12
       : (inputs.propertyTax * inflationIndex) / 12
@@ -204,11 +200,6 @@ function project(inputs: Inputs): Projection {
 
     // Escalate costs and grow the home for next month.
     homeValue *= 1 + houseGrowthM
-    rent *= 1 + inflM
-    homeIns *= 1 + inflM
-    rentIns *= 1 + inflM
-    propTaxFixedM *= 1 + inflM
-    maintFixedM *= 1 + inflM
     rent *= 1 + rentGrowthM
     inflationIndex *= 1 + inflM
 
@@ -220,7 +211,7 @@ function project(inputs: Inputs): Projection {
         homeEquity: homeValue - balance,
         sellingCost: sellingCostAt(homeValue),
         buyerPortfolio,
-        buyerNetWorth: buyerNetWorth(),
+        buyerNetWorth: buyerNetWorth(m / 12),
         renterNetWorth: renterPortfolio,
         buyerAnnualCost,
         renterAnnualCost,
@@ -300,6 +291,12 @@ export function simulate(inputs: Inputs): SimulationResult {
     deposit: core.deposit,
     purchaseCostsAmount: core.purchaseCostsAmount,
     sellingCostsAtHorizon: core.sellingCostsAtHorizon,
+    brightLineTaxAtHorizon: brightLineTaxOnSale(
+      last.homeValue - inputs.purchasePrice,
+      inputs.annualIncome,
+      last.year,
+      inputs.isMainHome,
+    ),
     monthlyPaymentPI: core.monthlyPaymentPI,
     breakEvenRent: solveBreakEvenRent(inputs),
   }
