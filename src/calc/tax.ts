@@ -10,8 +10,8 @@
  *   - Foreign dividends bear foreign withholding tax (FWT). In a taxable account
  *     it's creditable against NZ tax (so the net rate is max(marginal, FWT)); in
  *     a non-taxable account it leaks out with no offsetting domestic tax.
- *   - FIF, PIE/PIR, imputation credits, bright-line/property-sale tax, and
- *     transaction costs are out of scope for this faithful PWL-style version.
+ *   - FIF, PIE/PIR, imputation credits, and bright-line/property-sale tax are
+ *     out of scope for this PWL-style version.
  */
 
 export interface TaxBracket {

@@ -19,14 +19,13 @@ import type { Inputs, Location } from './types'
  *                      Whanganui, Marlborough) are approximate — confirm against the
  *                      MBIE market-rent tool before treating as exact.
  *
- * propertyTaxRatePct   Council rates as an EFFECTIVE % of the median price =
- * propertyTax          (representative council average residential rates bill) ÷
+ * propertyTax          Council rates as an EFFECTIVE % of the median price =
+ *                      (representative council average residential rates bill) ÷
  *                      (region median price). Metro bills (Auckland $4,069, Wellington
  *                      $5,094, Christchurch $4,212, Queenstown-Lakes $4,848) from the
  *                      Taxpayers' Union Ratepayers' Report 2025/26; provincial bills
  *                      estimated at ~$3,000–$3,600. This is more representative than a
  *                      flat national rate but the provincial figures are estimates.
- *                      Both fields are set to the same % value (mode stays 'pct').
  *
  * homeInsurance        ESTIMATE, not a quote. Base $3,000/yr, with an uplift for
  *                      natural-hazard exposure: highest seismic (Wellington,
@@ -45,7 +44,7 @@ import type { Inputs, Location } from './types'
  */
 export type RegionPreset = Pick<
   Inputs,
-  'purchasePrice' | 'rentMonthly' | 'propertyTaxRatePct' | 'propertyTax' | 'homeInsurance' | 'realEstateGrowthRatePct'
+  'purchasePrice' | 'rentMonthly' | 'propertyTax' | 'homeInsurance' | 'realEstateGrowthRatePct'
 >
 
 /** weekly rent → whole-dollar monthly rent */
@@ -56,25 +55,25 @@ export const REGION_PRESETS: Record<Location, RegionPreset> = {
   // (Real MBIE national median is ~$625/wk ≈ $2,708/mo and the REINZ national median is
   // ~$808k; this default keeps the prior round-number scenario. Swap in those figures if a
   // data-true national baseline is preferred.)
-  'New Zealand': { purchasePrice: 850_000, rentMonthly: 2_833, propertyTaxRatePct: 0.3, propertyTax: 0.3, homeInsurance: 3_000, realEstateGrowthRatePct: 3.5 },
+  'New Zealand': { purchasePrice: 850_000, rentMonthly: 2_833, propertyTax: 0.3, homeInsurance: 3_000, realEstateGrowthRatePct: 3.5 },
 
-  Northland:            { purchasePrice: 680_000,   rentMonthly: rent(560), propertyTaxRatePct: 0.5,  propertyTax: 0.5,  homeInsurance: 3_000, realEstateGrowthRatePct: 3.3 },
-  Auckland:             { purchasePrice: 1_050_000,  rentMonthly: rent(650), propertyTaxRatePct: 0.39, propertyTax: 0.39, homeInsurance: 3_360, realEstateGrowthRatePct: 3.5 },
-  Waikato:              { purchasePrice: 770_000,   rentMonthly: rent(575), propertyTaxRatePct: 0.44, propertyTax: 0.44, homeInsurance: 3_000, realEstateGrowthRatePct: 3.6 },
-  'Bay of Plenty':      { purchasePrice: 855_000,   rentMonthly: rent(640), propertyTaxRatePct: 0.42, propertyTax: 0.42, homeInsurance: 3_360, realEstateGrowthRatePct: 3.8 },
-  Gisborne:             { purchasePrice: 700_000,   rentMonthly: rent(580), propertyTaxRatePct: 0.46, propertyTax: 0.46, homeInsurance: 3_600, realEstateGrowthRatePct: 3.3 },
-  "Hawke's Bay":        { purchasePrice: 700_000,   rentMonthly: rent(600), propertyTaxRatePct: 0.5,  propertyTax: 0.5,  homeInsurance: 3_600, realEstateGrowthRatePct: 3.3 },
-  Taranaki:             { purchasePrice: 620_000,   rentMonthly: rent(560), propertyTaxRatePct: 0.53, propertyTax: 0.53, homeInsurance: 3_000, realEstateGrowthRatePct: 3.0 },
-  'Manawatū-Whanganui': { purchasePrice: 540_000,   rentMonthly: rent(530), propertyTaxRatePct: 0.61, propertyTax: 0.61, homeInsurance: 3_000, realEstateGrowthRatePct: 3.2 },
-  Wellington:           { purchasePrice: 790_000,   rentMonthly: rent(600), propertyTaxRatePct: 0.64, propertyTax: 0.64, homeInsurance: 4_080, realEstateGrowthRatePct: 3.3 },
-  Tasman:               { purchasePrice: 780_000,   rentMonthly: rent(590), propertyTaxRatePct: 0.46, propertyTax: 0.46, homeInsurance: 3_360, realEstateGrowthRatePct: 3.5 },
-  Nelson:               { purchasePrice: 745_000,   rentMonthly: rent(590), propertyTaxRatePct: 0.46, propertyTax: 0.46, homeInsurance: 3_360, realEstateGrowthRatePct: 3.5 },
-  Marlborough:          { purchasePrice: 749_000,   rentMonthly: rent(560), propertyTaxRatePct: 0.44, propertyTax: 0.44, homeInsurance: 4_080, realEstateGrowthRatePct: 3.3 },
-  'West Coast':         { purchasePrice: 395_000,   rentMonthly: rent(405), propertyTaxRatePct: 0.76, propertyTax: 0.76, homeInsurance: 3_000, realEstateGrowthRatePct: 2.5 },
-  Canterbury:           { purchasePrice: 720_000,   rentMonthly: rent(570), propertyTaxRatePct: 0.59, propertyTax: 0.59, homeInsurance: 3_600, realEstateGrowthRatePct: 3.5 },
-  Otago:                { purchasePrice: 625_000,   rentMonthly: rent(520), propertyTaxRatePct: 0.51, propertyTax: 0.51, homeInsurance: 3_000, realEstateGrowthRatePct: 3.5 },
-  'Queenstown-Lakes':   { purchasePrice: 1_610_000, rentMonthly: rent(750), propertyTaxRatePct: 0.3,  propertyTax: 0.3,  homeInsurance: 3_360, realEstateGrowthRatePct: 4.0 },
-  Southland:            { purchasePrice: 505_000,   rentMonthly: rent(475), propertyTaxRatePct: 0.59, propertyTax: 0.59, homeInsurance: 3_000, realEstateGrowthRatePct: 3.0 },
+  Northland:            { purchasePrice: 680_000,   rentMonthly: rent(560),  propertyTax: 0.5,  homeInsurance: 3_000, realEstateGrowthRatePct: 3.3 },
+  Auckland:             { purchasePrice: 1_050_000,  rentMonthly: rent(650), propertyTax: 0.39, homeInsurance: 3_360, realEstateGrowthRatePct: 3.5 },
+  Waikato:              { purchasePrice: 770_000,   rentMonthly: rent(575), propertyTax: 0.44, homeInsurance: 3_000, realEstateGrowthRatePct: 3.6 },
+  'Bay of Plenty':      { purchasePrice: 855_000,   rentMonthly: rent(640), propertyTax: 0.42, homeInsurance: 3_360, realEstateGrowthRatePct: 3.8 },
+  Gisborne:             { purchasePrice: 700_000,   rentMonthly: rent(580), propertyTax: 0.46, homeInsurance: 3_600, realEstateGrowthRatePct: 3.3 },
+  "Hawke's Bay":        { purchasePrice: 700_000,   rentMonthly: rent(600),  propertyTax: 0.5,  homeInsurance: 3_600, realEstateGrowthRatePct: 3.3 },
+  Taranaki:             { purchasePrice: 620_000,   rentMonthly: rent(560), propertyTax: 0.53, homeInsurance: 3_000, realEstateGrowthRatePct: 3.0 },
+  'Manawatū-Whanganui': { purchasePrice: 540_000,   rentMonthly: rent(530), propertyTax: 0.61, homeInsurance: 3_000, realEstateGrowthRatePct: 3.2 },
+  Wellington:           { purchasePrice: 790_000,   rentMonthly: rent(600), propertyTax: 0.64, homeInsurance: 4_080, realEstateGrowthRatePct: 3.3 },
+  Tasman:               { purchasePrice: 780_000,   rentMonthly: rent(590), propertyTax: 0.46, homeInsurance: 3_360, realEstateGrowthRatePct: 3.5 },
+  Nelson:               { purchasePrice: 745_000,   rentMonthly: rent(590), propertyTax: 0.46, homeInsurance: 3_360, realEstateGrowthRatePct: 3.5 },
+  Marlborough:          { purchasePrice: 749_000,   rentMonthly: rent(560), propertyTax: 0.44, homeInsurance: 4_080, realEstateGrowthRatePct: 3.3 },
+  'West Coast':         { purchasePrice: 395_000,   rentMonthly: rent(405), propertyTax: 0.76, homeInsurance: 3_000, realEstateGrowthRatePct: 2.5 },
+  Canterbury:           { purchasePrice: 720_000,   rentMonthly: rent(570), propertyTax: 0.59, homeInsurance: 3_600, realEstateGrowthRatePct: 3.5 },
+  Otago:                { purchasePrice: 625_000,   rentMonthly: rent(520), propertyTax: 0.51, homeInsurance: 3_000, realEstateGrowthRatePct: 3.5 },
+  'Queenstown-Lakes':   { purchasePrice: 1_610_000, rentMonthly: rent(750),  propertyTax: 0.3,  homeInsurance: 3_360, realEstateGrowthRatePct: 4.0 },
+  Southland:            { purchasePrice: 505_000,   rentMonthly: rent(475), propertyTax: 0.59, homeInsurance: 3_000, realEstateGrowthRatePct: 3.0 },
 }
 
 /** Market-data preset for a location, defaulting to the national scenario. */

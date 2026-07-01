@@ -1,4 +1,4 @@
-import type { Inputs, Location, ExpenseMode } from '../types'
+import type { ExpenseMode, Inputs, Location } from '../types'
 import { LOCATIONS } from '../types'
 import { NUMERIC_INPUT_LIMITS, type NumericInputKey } from '../inputLimits'
 import InputField from './InputField'
@@ -26,7 +26,7 @@ interface ToggleConfig {
 }
 
 const TOP_FIELDS: PlainConfig[] = [
-  { key: 'annualIncome', label: 'Annual income', prefix: '$', step: 1000, tooltip: 'Gross income — sets your NZ marginal tax rate.' },
+  { key: 'annualIncome', label: 'Annual income', prefix: '$', step: 1000, tooltip: 'Gross income - sets your NZ marginal tax rate.' },
   { key: 'timeHorizonYears', label: 'Time horizon', suffix: 'yrs', tooltip: 'The period to compare over.' },
 ]
 

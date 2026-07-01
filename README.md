@@ -3,9 +3,10 @@
 A near-exact clone of [PWL Capital's Rent vs Buy calculator](https://research-tools.pwlcapital.com/research/rent-vs-buy)
 (the Canadian tool behind Ben Felix's "5% rule"), localised for **New Zealand**.
 
-It keeps PWL's input fields and methodology, localised for **New Zealand**: the location
-drives **NZ income-tax rates** and **NZ investment-tax treatment**, plus NZ buying and
-selling **transaction costs**.
+It keeps PWL's methodology and field structure as the base, localised for
+**New Zealand**: the location drives **NZ income-tax rates** and **NZ investment-tax
+treatment**, plus NZ buying and selling **transaction costs** and optional fixed-dollar
+council-rates/maintenance inputs.
 
 > ⚠️ Educational tool, **not financial advice**. Tax rules are simplified — check
 > with a professional before deciding.
@@ -36,9 +37,10 @@ mortgage** vs **rent and invest the difference** — and compares net worth:
 - **Net worth** = home value (less selling costs) − mortgage balance + any side
   investments, versus the renter's portfolio.
 
-Outputs: the headline verdict, the break-even year, a net-worth-over-time chart, and
+Outputs: the headline verdict, the first break-even time, a net-worth-over-time chart, and
 a first-month cost breakdown. Every input is encoded in the URL, so a scenario is a
-**shareable link**.
+**shareable link**. Incoming links can also use PWL's original query-parameter names;
+the app maps them onto the New Zealand input names on load.
 
 ### The one localised difference: tax
 
@@ -60,9 +62,11 @@ are kept exactly — but taxed under **NZ rules**:
 - FIF rules, PIE/PIR tax treatment, dividend imputation credits, and
   bright-line/property-sale tax are not modelled.
 
+Council rates and maintenance can be entered either as a percentage of the home value
+or as fixed yearly dollar amounts that rise with inflation.
+
 The **asset allocation** input sets the equity/bond split and resets the return-mix
-fields accordingly (at 80% equity they match PWL's defaults exactly); you can then
-fine-tune any row.
+fields from PWL's 5-point preset table; you can then fine-tune any row.
 
 ## Develop locally
 
@@ -84,7 +88,7 @@ src/
   components/  inputs panel, results summary, net-worth chart, cost breakdown
   state/       encode/decode inputs ↔ URL query params
   defaults.ts  NZ default scenario
-  types.ts     the Inputs shape (mirrors PWL's fields)
+  types.ts     the Inputs shape (PWL-style base plus NZ-focused additions)
 ```
 
 The calculation engine is pure functions in `src/calc/`, covered by tests in

@@ -101,14 +101,13 @@ export default function App() {
         <section className="order-1 space-y-5">
           <ResultsSummary
             result={result}
-            horizon={inputs.timeHorizonYears}
             rentMonthly={inputs.rentMonthly}
             purchasePrice={inputs.purchasePrice}
           />
           <ChartTabs result={result} />
           <div className="space-y-5 pt-1">
             <BreakEvenSummary result={result} />
-            <CostBreakdown result={result} horizon={inputs.timeHorizonYears} />
+            <CostBreakdown result={result} horizon={result.horizonYears} />
             <AssumptionsNote
               marginalRatePct={marginalRate(inputs.annualIncome) * 100}
               isPortfolioTaxable={inputs.isPortfolioTaxable}

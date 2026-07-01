@@ -7,7 +7,6 @@ import { clampNumericInput } from './inputLimits'
 const PRESET_KEYS: (keyof RegionPreset)[] = [
   'purchasePrice',
   'rentMonthly',
-  'propertyTaxRatePct',
   'propertyTax',
   'homeInsurance',
   'realEstateGrowthRatePct',
@@ -35,13 +34,9 @@ describe('region presets', () => {
 
     expect(preset.purchasePrice).toBeGreaterThan(0)
     expect(preset.rentMonthly).toBeGreaterThan(0)
-    expect(preset.propertyTaxRatePct).toBeGreaterThanOrEqual(0)
     expect(preset.propertyTax).toBeGreaterThanOrEqual(0)
     expect(preset.homeInsurance).toBeGreaterThan(0)
     expect(preset.realEstateGrowthRatePct).toBeGreaterThan(0)
-
-    // propertyTaxRatePct and propertyTax must be in sync (same value, both used by engine).
-    expect(preset.propertyTax).toBe(preset.propertyTaxRatePct)
 
     // Every numeric value already satisfies the same limits the UI/URL layer enforces.
     for (const key of PRESET_KEYS) {
