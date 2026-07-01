@@ -1,6 +1,4 @@
 import { useEffect, useId, useState, type ReactNode } from 'react'
-import { useEffect, useState, type ReactNode } from 'react'
-import InfoTooltip from './InfoTooltip'
 
 interface Props {
   label: string
@@ -9,11 +7,10 @@ interface Props {
   prefix?: string
   suffix?: string
   tooltip?: string
-  labelAccessory?: ReactNode
+  labelAccessory?: ReactNode // optional control shown at the right of the label row (e.g. a % / $ toggle)
   step?: number
   min?: number
   max?: number
-  labelAccessory?: ReactNode // optional control shown at the right of the label row (e.g. a % / $ toggle)
 }
 
 function clamp(n: number, min?: number, max?: number): number {
@@ -34,7 +31,6 @@ export default function InputField({
   step = 1,
   min,
   max,
-  labelAccessory,
 }: Props) {
   const [text, setText] = useState(String(value))
   const inputId = useId()
@@ -79,12 +75,6 @@ export default function InputField({
         </label>
         {labelAccessory && <span className="ml-auto shrink-0">{labelAccessory}</span>}
       </div>
-    <label className="block">
-      <span className="flex items-center gap-1 text-sm font-medium text-slate-700">
-        {label}
-        {tooltip && <InfoTooltip text={tooltip} />}
-        {labelAccessory && <span className="ml-auto">{labelAccessory}</span>}
-      </span>
       <div className="mt-1 flex items-center rounded-md border border-slate-300 bg-white focus-within:border-sky-500 focus-within:ring-1 focus-within:ring-sky-500">
         {prefix && <span className="pl-2 text-sm text-slate-400">{prefix}</span>}
         <input

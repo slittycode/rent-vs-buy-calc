@@ -170,10 +170,10 @@ describe('simulation — structure', () => {
   it('uses fixed annual council rates and maintenance in the first month when enabled', () => {
     const r = simulate({
       ...NZ_DEFAULTS,
-      propertyTaxIsFixed: true,
-      propertyTaxAnnualFixed: 3600,
-      maintenanceIsFixed: true,
-      maintenanceAnnualFixed: 6000,
+      propertyTaxMode: 'dollar',
+      propertyTax: 3600,
+      maintenanceMode: 'dollar',
+      maintenance: 6000,
     })
 
     expect(r.firstMonth.propertyTax).toBeCloseTo(300, 5)
@@ -184,16 +184,14 @@ describe('simulation — structure', () => {
     const fixed = simulate({
       ...NZ_DEFAULTS,
       purchasePrice: 600_000,
-      propertyTaxRatePct: 1,
-      propertyTaxIsFixed: true,
-      propertyTaxAnnualFixed: 3600,
+      propertyTaxMode: 'dollar',
+      propertyTax: 3600,
     })
     const percentage = simulate({
       ...NZ_DEFAULTS,
       purchasePrice: 600_000,
-      propertyTaxRatePct: 1,
-      propertyTaxIsFixed: false,
-      propertyTaxAnnualFixed: 3600,
+      propertyTaxMode: 'pct',
+      propertyTax: 1,
     })
 
     expect(fixed.firstMonth.propertyTax).toBeCloseTo(300, 5)
@@ -205,13 +203,14 @@ describe('simulation — structure', () => {
       ...NZ_DEFAULTS,
       timeHorizonYears: 2,
       purchasePrice: 100_000,
-      downPaymentPct: 100,
-      propertyTaxIsFixed: true,
-      propertyTaxAnnualFixed: 1200,
-      maintenanceCostPct: 0,
-      maintenanceIsFixed: true,
-      maintenanceAnnualFixed: 0,
-      homeInsuranceMonthly: 0,
+      downPayment: 100,
+      downPaymentMode: 'pct',
+      propertyTaxMode: 'dollar',
+      propertyTax: 1200,
+      maintenanceMode: 'dollar',
+      maintenance: 0,
+      homeInsuranceMode: 'dollar',
+      homeInsurance: 0,
       rentMonthly: 0,
       rentInsuranceMonthly: 0,
       inflationPct: 10,
@@ -229,20 +228,20 @@ describe('simulation — structure', () => {
       timeHorizonYears: 1,
       rentMonthly: 10_000,
       rentInsuranceMonthly: 0,
-      propertyTaxIsFixed: true,
-      propertyTaxAnnualFixed: 1200,
-      maintenanceIsFixed: true,
-      maintenanceAnnualFixed: 1200,
+      propertyTaxMode: 'dollar',
+      propertyTax: 1200,
+      maintenanceMode: 'dollar',
+      maintenance: 1200,
     })
     const highCosts = simulate({
       ...NZ_DEFAULTS,
       timeHorizonYears: 1,
       rentMonthly: 10_000,
       rentInsuranceMonthly: 0,
-      propertyTaxIsFixed: true,
-      propertyTaxAnnualFixed: 7200,
-      maintenanceIsFixed: true,
-      maintenanceAnnualFixed: 7200,
+      propertyTaxMode: 'dollar',
+      propertyTax: 7200,
+      maintenanceMode: 'dollar',
+      maintenance: 7200,
     })
 
     expect(highCosts.series[1].buyerAnnualCost).toBeGreaterThan(lowCosts.series[1].buyerAnnualCost)
