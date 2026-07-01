@@ -31,6 +31,9 @@ describe('App (smoke)', () => {
     expect(screen.getAllByRole('button', { name: 'percentage' }).length).toBeGreaterThan(0)
     expect(screen.getAllByRole('button', { name: 'dollar amount' }).length).toBeGreaterThan(0)
 
+    // Scenario comparison feature.
+    expect(screen.getByRole('button', { name: /pin to compare/i })).toBeTruthy()
+
     const text = container.textContent ?? ''
     expect(text).not.toMatch(/Canadian province/i)
     expect(text).not.toMatch(/PWL Capital/i)

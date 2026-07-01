@@ -39,13 +39,10 @@ export default function AssumptionsNote({ marginalRatePct, isPortfolioTaxable }:
         <p>
           <strong>Caveats.</strong> Figures are in today&rsquo;s nominal dollars, a single fixed mortgage rate is assumed
           for the whole term, and returns are smooth averages. Council rates and maintenance can be entered as a home-value
-          percentage or a fixed yearly amount; fixed yearly amounts rise with inflation. Transaction costs are modelled
-          only as flat percentages (no fixed-fee detail). FIF rules, PIE/PIR tax treatment, dividend imputation credits,
-          and bright-line/property-sale tax are not modelled. This is a simplified tool to aid thinking, not financial
-          for the whole term, and returns are smooth averages. Buying and selling transaction costs are modelled, but FIF
-          rules, PIE/PIR tax treatment, dividend imputation credits, bright-line/property-sale tax, mortgage low-equity
-          premiums, and KiwiSaver first-home support are not. This is a simplified tool to aid thinking, not financial
-          advice.
+          percentage or a fixed yearly amount; fixed yearly amounts rise with inflation. Buying and selling transaction
+          costs are modelled, but FIF rules, PIE/PIR tax treatment, dividend imputation credits, bright-line/property-sale
+          tax, mortgage low-equity premiums, and KiwiSaver first-home support are not. This is a simplified tool to aid
+          thinking, not financial advice.
         </p>
         <p>
           <strong>Sharing and privacy.</strong> The app runs in your browser. It has no backend, accounts, API keys, or

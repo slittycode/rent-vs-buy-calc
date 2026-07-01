@@ -1,6 +1,7 @@
 import type { Inputs } from './types'
 
 export type NumericInputKey = { [K in keyof Inputs]: Inputs[K] extends number ? K : never }[keyof Inputs]
+
 export interface NumericInputLimit {
   min?: number
   max?: number

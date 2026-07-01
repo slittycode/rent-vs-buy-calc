@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { NZ_DEFAULTS } from '../defaults'
 import { REGION_PRESETS } from '../regions'
-import { decodeInputs, encodeInputs } from './urlState'
+import { buildSearch, decodeInputs, decodePinned, encodeInputs } from './urlState'
 
 describe('URL input decoding', () => {
   it('falls back to New Zealand for invalid location values', () => {
@@ -169,5 +169,20 @@ describe('URL input decoding', () => {
     }
     const decoded = decodeInputs('?' + encodeInputs(scenario))
     expect(decoded).toEqual(scenario)
+  })
+})
+
+describe('pinned comparison scenario', () => {
+  it('round-trips a pinned scenario without disturbing the main inputs', () => {
+    const pinned = { ...NZ_DEFAULTS, purchasePrice: 1_200_000, timeHorizonYears: 7 }
+    const search = `?${buildSearch(NZ_DEFAULTS, pinned)}`
+
+    expect(decodePinned(search)).toEqual(pinned)
+    expect(decodeInputs(search)).toEqual(NZ_DEFAULTS)
+  })
+
+  it('omits the pin param and decodes to null when nothing is pinned', () => {
+    expect(buildSearch(NZ_DEFAULTS, null)).not.toMatch(/pin=/)
+    expect(decodePinned('?purchasePrice=900000')).toBeNull()
   })
 })

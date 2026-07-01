@@ -60,7 +60,12 @@ const TABS: TabDef[] = [
   { id: 'renterSavings', label: 'Renter Savings', icon: <PiggyBankIcon /> },
 ]
 
-export default function ChartTabs({ result }: { result: SimulationResult }) {
+interface Props {
+  result: SimulationResult
+  compareResult?: SimulationResult | null
+}
+
+export default function ChartTabs({ result, compareResult }: Props) {
   const [activeTab, setActiveTab] = useState<ChartTab>('netWorth')
 
   return (
@@ -93,7 +98,11 @@ export default function ChartTabs({ result }: { result: SimulationResult }) {
       </div>
 
       {activeTab === 'netWorth' && (
-        <NetWorthChart result={result} mortgagePaidOffYear={result.mortgagePaidOffYear} />
+        <NetWorthChart
+          result={result}
+          compareResult={compareResult}
+          mortgagePaidOffYear={result.mortgagePaidOffYear}
+        />
       )}
       {activeTab === 'cashFlow' && (
         <CashFlowChart result={result} mortgagePaidOffYear={result.mortgagePaidOffYear} />
