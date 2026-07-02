@@ -60,10 +60,13 @@ const TABS: TabDef[] = [
   { id: 'renterSavings', label: 'Renter Savings', icon: <PiggyBankIcon /> },
 ]
 
-export default function ChartTabs({ result }: { result: SimulationResult }) {
+interface Props {
+  result: SimulationResult
+  compareResult?: SimulationResult | null
+}
+
+export default function ChartTabs({ result, compareResult }: Props) {
   const [activeTab, setActiveTab] = useState<ChartTab>('netWorth')
-  const mortgagePaidOffYear =
-    result.series.find((p) => p.year > 0 && p.mortgageBalance === 0)?.year ?? null
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -95,13 +98,17 @@ export default function ChartTabs({ result }: { result: SimulationResult }) {
       </div>
 
       {activeTab === 'netWorth' && (
-        <NetWorthChart result={result} mortgagePaidOffYear={mortgagePaidOffYear} />
+        <NetWorthChart
+          result={result}
+          compareResult={compareResult}
+          mortgagePaidOffYear={result.mortgagePaidOffYear}
+        />
       )}
       {activeTab === 'cashFlow' && (
-        <CashFlowChart result={result} mortgagePaidOffYear={mortgagePaidOffYear} />
+        <CashFlowChart result={result} mortgagePaidOffYear={result.mortgagePaidOffYear} />
       )}
       {activeTab === 'renterSavings' && (
-        <RenterSavingsChart result={result} mortgagePaidOffYear={mortgagePaidOffYear} />
+        <RenterSavingsChart result={result} mortgagePaidOffYear={result.mortgagePaidOffYear} />
       )}
     </section>
   )

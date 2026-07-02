@@ -21,6 +21,7 @@ interface Props {
 export default function CashFlowChart({ result, mortgagePaidOffYear }: Props) {
   const data = result.series.map((p) => ({
     year: p.year,
+    periodMonths: p.periodMonths,
     Buying: Math.round(p.buyerAnnualCost),
     Renting: Math.round(p.renterAnnualCost),
   }))
@@ -28,7 +29,7 @@ export default function CashFlowChart({ result, mortgagePaidOffYear }: Props) {
   return (
     <>
       <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
-        Annual cash flow
+        Cash flow by period
       </h3>
       <div className="h-96 w-full">
         <ResponsiveContainer width="100%" height="100%">
@@ -76,8 +77,9 @@ export default function CashFlowChart({ result, mortgagePaidOffYear }: Props) {
         </ResponsiveContainer>
       </div>
       <p className="mt-2 text-xs text-slate-500">
-        Annual cash flow adds up each year&rsquo;s housing costs. Year 0 is shown as zero so the
-        chart lines up with the net-worth view.
+        Cash flow adds up housing costs since the previous chart point. Full-year points cover 12 months; a fractional
+        final point covers only its remaining months. Year 0 is shown as zero so the chart lines up with the net-worth
+        view.
       </p>
     </>
   )

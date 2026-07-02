@@ -15,6 +15,7 @@ import { ChartTooltip } from './ChartTooltip'
 
 interface Props {
   result: SimulationResult
+  compareResult?: SimulationResult | null
   mortgagePaidOffYear: number | null
 }
 
@@ -55,12 +56,31 @@ const CrossoverLabel = (props: {
   )
 }
 
-export default function NetWorthChart({ result, mortgagePaidOffYear }: Props) {
-  const data = result.series.map((p) => ({
-    year: p.year,
-    Buying: Math.round(p.buyerNetWorth),
-    Renting: Math.round(p.renterNetWorth),
-  }))
+export default function NetWorthChart({ result, compareResult, mortgagePaidOffYear }: Props) {
+  // Merge the live series (B) and any pinned series (A) on the year axis; horizons
+  // may differ, so each line simply spans the years it has.
+  const byYear = new Map<number, Record<string, number>>()
+  const rowFor = (year: number) => {
+    let row = byYear.get(year)
+    if (!row) {
+      row = { year }
+      byYear.set(year, row)
+    }
+    return row
+  }
+  for (const p of result.series) {
+    const row = rowFor(p.year)
+    row.Buying = Math.round(p.buyerNetWorth)
+    row.Renting = Math.round(p.renterNetWorth)
+  }
+  if (compareResult) {
+    for (const p of compareResult.series) {
+      const row = rowFor(p.year)
+      row['Buying (A)'] = Math.round(p.buyerNetWorth)
+      row['Renting (A)'] = Math.round(p.renterNetWorth)
+    }
+  }
+  const data = [...byYear.values()].sort((a, b) => a.year - b.year)
 
   return (
     <>
@@ -138,13 +158,37 @@ export default function NetWorthChart({ result, mortgagePaidOffYear }: Props) {
               dot={false}
               activeDot={{ r: 5, strokeWidth: 2, stroke: '#fff' }}
             />
+            {compareResult && (
+              <>
+                <Area
+                  type="monotone"
+                  dataKey="Buying (A)"
+                  stroke="#34d399"
+                  strokeWidth={2}
+                  strokeDasharray="5 4"
+                  fill="none"
+                  dot={false}
+                  activeDot={{ r: 4, strokeWidth: 2, stroke: '#fff' }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="Renting (A)"
+                  stroke="#38bdf8"
+                  strokeWidth={2}
+                  strokeDasharray="5 4"
+                  fill="none"
+                  dot={false}
+                  activeDot={{ r: 4, strokeWidth: 2, stroke: '#fff' }}
+                />
+              </>
+            )}
           </AreaChart>
         </ResponsiveContainer>
       </div>
       <p className="mt-2 text-xs text-slate-500">
-        Net worth assumes you cash out that year: the buyer sells (net of selling costs) and clears the mortgage, while
-        the renter liquidates the portfolio. NZ has no exit/capital-gains tax in this model, so the portfolio is already
-        after-tax.
+        Net worth assumes you cash out that year: the buyer sells (net of selling costs, and bright-line tax if it
+        applies) and clears the mortgage, while the renter liquidates the portfolio. NZ has no exit/capital-gains tax in
+        this model, so the portfolio is already after-tax.{compareResult ? ' Dashed lines are the pinned scenario (A).' : ''}
       </p>
     </>
   )

@@ -1,5 +1,5 @@
 import type { SimulationResult } from '../calc/simulate'
-import { formatNZD } from '../format'
+import { formatNZD, formatYears } from '../format'
 
 function Row({ label, value }: { label: string; value: number }) {
   return (
@@ -13,6 +13,7 @@ function Row({ label, value }: { label: string; value: number }) {
 export default function CostBreakdown({ result, horizon }: { result: SimulationResult; horizon: number }) {
   const b = result.firstMonth
   const diff = b.buyerTotal - b.renterTotal
+  const startCostsAreLevel = Math.round(Math.abs(diff)) === 0
   const upfront = result.deposit + result.purchaseCostsAmount
 
   return (
@@ -50,8 +51,9 @@ export default function CostBreakdown({ result, horizon }: { result: SimulationR
         </div>
       </div>
       <p className="mt-3 text-xs text-slate-500">
-        Owning costs {formatNZD(Math.abs(diff))} {diff >= 0 ? 'more' : 'less'} per month than renting to start. Each
-        month the cheaper side invests its surplus.
+        {startCostsAreLevel
+          ? 'Owning and renting cost the same per month to start.'
+          : `Owning costs ${formatNZD(Math.abs(diff))} ${diff > 0 ? 'more' : 'less'} per month than renting to start. Each month the cheaper side invests its surplus.`}
       </p>
 
       <h3 className="mb-2 mt-5 text-sm font-semibold uppercase tracking-wide text-slate-500">One-off costs</h3>
@@ -63,7 +65,7 @@ export default function CostBreakdown({ result, horizon }: { result: SimulationR
             <td className="py-1">Upfront cash to buy</td>
             <td className="py-1 text-right tabular-nums">{formatNZD(upfront)}</td>
           </tr>
-          <Row label={`Selling costs if sold in year ${horizon}`} value={result.sellingCostsAtHorizon} />
+          <Row label={`Selling costs if sold at ${formatYears(horizon)}`} value={result.sellingCostsAtHorizon} />
         </tbody>
       </table>
       <p className="mt-3 text-xs text-slate-500">

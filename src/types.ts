@@ -4,6 +4,7 @@
  * regions and the Queenstown-Lakes district. Selecting one pre-fills the market-
  * specific fields (price, rent, rates, insurance, growth) — see `regions.ts`. NZ
  * income tax is the same nationwide, so location does not change the tax maths.
+ *
  * Percentages are whole numbers (5.5 = 5.5%); dollar amounts are NZD.
  *
  * Several home expenses can be entered either as a **percentage of a base**
@@ -55,12 +56,6 @@ export interface Inputs {
   downPaymentMode: ExpenseMode
   amortizationYears: number
   interestRatePct: number
-  propertyTaxRatePct: number // annual, % of property value (NZ: council rates)
-  propertyTaxIsFixed: boolean
-  propertyTaxAnnualFixed: number
-  maintenanceCostPct: number // annual, % of property value
-  maintenanceIsFixed: boolean
-  maintenanceAnnualFixed: number
   purchaseCosts: number // one-time upfront buying costs (legal, LIM, building report); % of price or $
   purchaseCostsMode: ExpenseMode
   sellingCosts: number // one-time costs at sale (agent commission, legal); % of sale value or $

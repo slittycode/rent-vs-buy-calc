@@ -5,27 +5,29 @@ import { simulate } from './calc/simulate'
 import { marginalRate } from './calc/tax'
 import { compositionForAllocation } from './calc/portfolio'
 import { presetForLocation } from './regions'
-import { decodeInputs, encodeInputs } from './state/urlState'
+import { buildSearch, decodeInputs, decodePinned } from './state/urlState'
 import InputsPanel from './components/InputsPanel'
 import ResultsSummary, { BreakEvenSummary } from './components/ResultsSummary'
 import ChartTabs from './components/ChartTabs'
 import CostBreakdown from './components/CostBreakdown'
+import ScenarioCompare from './components/ScenarioCompare'
 import AssumptionsNote from './components/AssumptionsNote'
 
 export default function App() {
   const [inputs, setInputs] = useState<Inputs>(() => decodeInputs(window.location.search))
+  const [pinned, setPinned] = useState<Inputs | null>(() => decodePinned(window.location.search))
   const [copied, setCopied] = useState(false)
 
-  // Mirror inputs into the URL so a scenario is a shareable link.
+  // Mirror inputs (and any pinned comparison) into the URL so a scenario is a shareable link.
   useEffect(() => {
     const id = setTimeout(() => {
-      const qs = encodeInputs(inputs)
-      window.history.replaceState(null, '', `${window.location.pathname}?${qs}`)
+      window.history.replaceState(null, '', `${window.location.pathname}?${buildSearch(inputs, pinned)}`)
     }, 250)
     return () => clearTimeout(id)
-  }, [inputs])
+  }, [inputs, pinned])
 
   const result = useMemo(() => simulate(inputs), [inputs])
+  const pinnedResult = useMemo(() => (pinned ? simulate(pinned) : null), [pinned])
 
   function update<K extends keyof Inputs>(key: K, value: Inputs[K]) {
     setInputs((prev) => {
@@ -51,10 +53,18 @@ export default function App() {
     setInputs(NZ_DEFAULTS)
   }
 
+  // Swap the live scenario with the pinned one so you can edit from either side.
+  function swapPinned() {
+    setInputs((prevInputs) => {
+      setPinned(prevInputs)
+      return pinned ?? prevInputs
+    })
+  }
+
   async function copyLink() {
-    const qs = encodeInputs(inputs)
-    const shareUrl = `${window.location.origin}${window.location.pathname}?${qs}`
-    window.history.replaceState(null, '', `${window.location.pathname}?${qs}`)
+    const search = buildSearch(inputs, pinned)
+    const shareUrl = `${window.location.origin}${window.location.pathname}?${search}`
+    window.history.replaceState(null, '', `${window.location.pathname}?${search}`)
 
     try {
       await navigator.clipboard.writeText(shareUrl)
@@ -82,6 +92,12 @@ export default function App() {
             <h2 className="text-lg font-semibold">Assumptions</h2>
             <div className="flex gap-2">
               <button
+                onClick={() => setPinned(inputs)}
+                className="rounded-md border border-slate-300 bg-white px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                {pinned ? 'Re-pin current' : 'Pin to compare'}
+              </button>
+              <button
                 onClick={copyLink}
                 className="rounded-md border border-slate-300 bg-white px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
               >
@@ -101,14 +117,19 @@ export default function App() {
         <section className="order-1 space-y-5">
           <ResultsSummary
             result={result}
-            horizon={inputs.timeHorizonYears}
             rentMonthly={inputs.rentMonthly}
             purchasePrice={inputs.purchasePrice}
           />
-          <ChartTabs result={result} />
+          <ScenarioCompare
+            current={result}
+            pinned={pinnedResult}
+            onClear={() => setPinned(null)}
+            onSwap={swapPinned}
+          />
+          <ChartTabs result={result} compareResult={pinnedResult} />
           <div className="space-y-5 pt-1">
             <BreakEvenSummary result={result} />
-            <CostBreakdown result={result} horizon={inputs.timeHorizonYears} />
+            <CostBreakdown result={result} horizon={result.horizonYears} />
             <AssumptionsNote
               marginalRatePct={marginalRate(inputs.annualIncome) * 100}
               isPortfolioTaxable={inputs.isPortfolioTaxable}

@@ -21,6 +21,7 @@ interface Props {
 export default function RenterSavingsChart({ result, mortgagePaidOffYear }: Props) {
   const data = result.series.map((p) => ({
     year: p.year,
+    periodMonths: p.periodMonths,
     'Renter Savings': Math.round(p.renterAnnualSavings),
   }))
 
@@ -81,8 +82,8 @@ export default function RenterSavingsChart({ result, mortgagePaidOffYear }: Prop
         </ResponsiveContainer>
       </div>
       <p className="mt-2 text-xs text-slate-500">
-        Positive values (green) mean renting costs less for that year, so the renter has more to
-        invest. Negative values (red) mean buying costs less for that year.
+        Positive values (green) mean renting costs less for that period, so the renter has more to
+        invest. Negative values (red) mean buying costs less for that period.
       </p>
     </>
   )

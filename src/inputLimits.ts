@@ -1,7 +1,6 @@
 import type { Inputs } from './types'
 
 export type NumericInputKey = { [K in keyof Inputs]: Inputs[K] extends number ? K : never }[keyof Inputs]
-export type BooleanInputKey = { [K in keyof Inputs]: Inputs[K] extends boolean ? K : never }[keyof Inputs]
 
 export interface NumericInputLimit {
   min?: number
@@ -16,39 +15,35 @@ export interface NumericInputLimit {
  * mode-aware cap via `toggleFieldLimit`.
  */
 export const NUMERIC_INPUT_LIMITS: Record<NumericInputKey, NumericInputLimit> = {
-  timeHorizonYears: { min: 1, max: 50 },
-  annualIncome: { min: 0 },
+  timeHorizonYears: { min: 0, max: 100 },
+  annualIncome: { min: 0, max: 1_000_000 },
 
-  purchasePrice: { min: 0 },
+  purchasePrice: { min: 0, max: 5_000_000 },
   downPayment: { min: 0 },
   amortizationYears: { min: 1, max: 40 },
-  interestRatePct: { min: 0 },
-  propertyTaxRatePct: { min: 0 },
-  propertyTaxAnnualFixed: { min: 0 },
-  maintenanceCostPct: { min: 0 },
-  maintenanceAnnualFixed: { min: 0 },
+  interestRatePct: { min: 0, max: 10 },
   purchaseCosts: { min: 0 },
   sellingCosts: { min: 0 },
 
   propertyTax: { min: 0 },
   maintenance: { min: 0 },
   homeInsurance: { min: 0 },
-  otherHomeCostsMonthly: { min: 0 },
-  realEstateGrowthRatePct: {},
+  otherHomeCostsMonthly: { min: 0, max: 10_000 },
+  realEstateGrowthRatePct: { min: -100, max: 10 },
 
-  rentMonthly: { min: 0 },
-  rentInsuranceMonthly: { min: 0 },
-  rentGrowthPct: {},
+  rentMonthly: { min: 0, max: 10_000 },
+  rentInsuranceMonthly: { min: 0, max: 10_000 },
+  rentGrowthPct: { min: -100, max: 10 },
 
   assetAllocationPct: { min: 0, max: 100 },
-  inflationPct: {},
+  inflationPct: { min: -100, max: 10 },
   investmentFeePct: { min: 0, max: 100 },
 
-  eligibleDividendsPct: { min: 0 },
-  foreignDividendsPct: { min: 0 },
-  unrealizedGainsPct: { min: 0 },
-  realizedGainsPct: { min: 0 },
-  interestIncomePct: { min: 0 },
+  eligibleDividendsPct: { min: 0, max: 10 },
+  foreignDividendsPct: { min: 0, max: 10 },
+  unrealizedGainsPct: { min: 0, max: 10 },
+  realizedGainsPct: { min: 0, max: 10 },
+  interestIncomePct: { min: 0, max: 10 },
   foreignWithholdingTaxPct: { min: 0, max: 100 },
 }
 

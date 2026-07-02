@@ -1,4 +1,5 @@
 import { useEffect, useId, useState, type ReactNode } from 'react'
+import InfoTooltip from './InfoTooltip'
 
 interface Props {
   label: string
@@ -45,18 +46,18 @@ export default function InputField({
     setText(raw)
     if (raw === '') return
     const n = Number(raw)
-    if (Number.isFinite(n)) onChange(n) // clamp only on blur so typing isn't fought
+    if (Number.isFinite(n)) onChange(n)
   }
 
   function handleBlur() {
     const n = Number(text)
     if (text === '' || !Number.isFinite(n)) {
       setText(String(value))
-    } else {
-      const clamped = clamp(n, min, max)
-      setText(String(clamped))
-      if (clamped !== value) onChange(clamped)
+      return
     }
+    const clamped = clamp(n, min, max)
+    setText(String(clamped))
+    if (clamped !== value) onChange(clamped)
   }
 
   return (
@@ -64,14 +65,7 @@ export default function InputField({
       <div className="flex min-h-5 items-center gap-2">
         <label htmlFor={inputId} className="flex min-w-0 items-center gap-1 text-sm font-medium text-slate-700">
           <span>{label}</span>
-          {tooltip && (
-            <span
-              title={tooltip}
-              className="inline-flex h-4 w-4 cursor-help items-center justify-center rounded-full bg-slate-200 text-[10px] font-bold text-slate-600"
-            >
-              ?
-            </span>
-          )}
+          {tooltip && <InfoTooltip text={tooltip} />}
         </label>
         {labelAccessory && <span className="ml-auto shrink-0">{labelAccessory}</span>}
       </div>

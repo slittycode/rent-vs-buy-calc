@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, afterEach } from 'vitest'
-import { render, screen, cleanup } from '@testing-library/react'
+import { render, screen, cleanup, fireEvent } from '@testing-library/react'
 import App from './App'
 
 afterEach(cleanup)
@@ -31,6 +31,9 @@ describe('App (smoke)', () => {
     expect(screen.getAllByRole('button', { name: 'percentage' }).length).toBeGreaterThan(0)
     expect(screen.getAllByRole('button', { name: 'dollar amount' }).length).toBeGreaterThan(0)
 
+    // Scenario comparison feature.
+    expect(screen.getByRole('button', { name: /pin to compare/i })).toBeTruthy()
+
     const text = container.textContent ?? ''
     expect(text).not.toMatch(/Canadian province/i)
     expect(text).not.toMatch(/PWL Capital/i)
@@ -44,5 +47,45 @@ describe('App (smoke)', () => {
     expect(text).toMatch(/transaction costs are modelled/i)
     expect(text).toMatch(/no backend, accounts, API keys, or stored personal data/i)
     expect(text).toMatch(/share link puts the calculator inputs in the URL/i)
+  })
+
+  it('does not describe partial-period cash-flow bars as full annual values', () => {
+    render(<App />)
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Cash Flow' }))
+
+    expect(screen.getByText(/Cash flow by period/i)).toBeTruthy()
+    expect(screen.getByText(/Full-year points cover 12 months/i)).toBeTruthy()
+    expect(screen.queryByText(/Annual cash flow adds up each year/i)).toBeNull()
+  })
+
+  it('clamps typed numeric assumptions before recalculating results', async () => {
+    render(<App />)
+
+    const horizonInput = screen.getByRole('spinbutton', { name: /Time horizon/i }) as HTMLInputElement
+
+    fireEvent.change(horizonInput, {
+      target: { value: '999' },
+    })
+    fireEvent.blur(horizonInput)
+
+    await screen.findByDisplayValue('100')
+    expect(horizonInput.value).toBe('100')
+  })
+
+  it('still resets return assumptions when asset allocation changes', () => {
+    render(<App />)
+
+    const assetAllocationSelect = screen.getAllByRole('combobox').find(
+      (element) => (element as HTMLSelectElement).value === '80',
+    )
+    expect(assetAllocationSelect).toBeTruthy()
+
+    fireEvent.change(assetAllocationSelect!, {
+      target: { value: '100' },
+    })
+
+    expect((screen.getByRole('spinbutton', { name: /Interest income/i }) as HTMLInputElement).value).toBe('0')
+    expect((screen.getByRole('spinbutton', { name: /Foreign dividends/i }) as HTMLInputElement).value).toBe('0.94')
   })
 })
